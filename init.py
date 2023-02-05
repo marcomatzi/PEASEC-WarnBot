@@ -24,7 +24,7 @@ class SetupEnv:
     #db.get_query("warntype")
 
     db.get_query("warnings")
-    Collector.custom_warning("custom.8477464839_public_topics", "Test Meldung", "Test Message", 2, "Severe", "Alert", "", "Custom", "Hier steht die Beschreibung der Meldung.")
+    Collector.custom_warning("custom.8477464840_public_topics", "Ich habe durst", "I am thirsty", 1, "low", "Alert", "", "Custom", "Ich brauche ein Getränk.")
     db.get_query("warnings")
     # db.delete_query("Delete from warntype where name='Test'", "warn.db")
     # db.get_query("warntype")
