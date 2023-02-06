@@ -3,14 +3,17 @@ import logging
 
 import db_functions
 from users import Users
+from UI import App
+from datetime import datetime
 
 class TelegramBot:
-    def __init__(self, token):
+    def __init__(self, token, app):
         self.token = token
         # self.url = f"https://api.telegram.org/bot{token}/"
         self.offset = 0
         self.base_url = f"https://api.telegram.org/bot{token}"
         self.logger = logging.getLogger(__name__)
+        self.ui = app
 
     """
     def get_updates(self):
@@ -127,6 +130,11 @@ class TelegramBot:
                     u.new_user(userdata)
 
                 text = message["text"]
+                now = datetime.now()
+                current_time = now.strftime("%d-%m-%Y %H:%M:%S")
+                # self.ui.sidebar_button_event("[{}] UID {} in chat {}: \n    {}".format(current_time, user_id, chat_id, text))
+                self.ui.sidebar_button_event("[{}] {}".format(current_time, text))
+
                 self.logger.info("Received message from user %s in chat %s: %s", user_id, chat_id, text)
                 msg = self.analyse_message(user_id, chat_id, text)
 

@@ -1,13 +1,16 @@
-import db_functions
+import tkinter as tk
+
+import UI
 from telegram_api import TelegramBot
 import logging
-import asyncio
-from UI import TelegramBotGUI
+from UI import App
+import asyncio      # Used for API and UI parallel
+import threading    # Used for API and UI parallel
 
 
-async def main():
+def main():
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
-    bot = TelegramBot("5979163637:AAFsR0MwfvPb9FwB2oPQKPQJlnkmkcZmKmg")
+    bot = TelegramBot("5979163637:AAFsR0MwfvPb9FwB2oPQKPQJlnkmkcZmKmg", app)
 
     last_update_id = None
     while True:
@@ -21,7 +24,17 @@ async def main():
 
         # Updates im json der Warn-API / DB
 
+def start_function_thread():
+    thread_telegram_api = threading.Thread(target=main)
+    #thread_gui = threading.Thread(target=UI.App.start)
 
+    thread_telegram_api.start()
+    #thread_gui.start()
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    #asyncio.run(main())
+    app = App()
+
+    start_function_thread()
+
+    app.mainloop()

@@ -2,6 +2,7 @@ import os
 import sys
 import sqlite3
 
+
 class Database:
     """def __init__(self, dbname):
         self.name = dbname"""
@@ -119,7 +120,7 @@ class Database:
         c.execute(query)
 
         rows = c.fetchall()
-        #print(rows)
+        # print(rows)
         """for row in rows:
             print(row)"""
         conn.close()
@@ -144,7 +145,7 @@ class Database:
         liste = []
         for e in userlist:
             tmp = [e[2], e[5]]  # Zwischenspeichern von name und chat_id
-            liste.append(tmp)   # In eine neue Liste einfügen, die nur name und chat_id beinhaltet
+            liste.append(tmp)  # In eine neue Liste einfügen, die nur name und chat_id beinhaltet
 
         print(liste)
         return userlist
@@ -154,6 +155,7 @@ class Database:
         arr = Database.get_query(table, where)
         print("coming %", len(arr))
         return len(arr)
+
 
 """db = Database()
 db.send_all_users_msg("test", "name like 'marco'")"""
