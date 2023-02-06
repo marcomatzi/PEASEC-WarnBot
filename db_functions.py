@@ -49,34 +49,6 @@ class Database:
               "type TEXT)"
         cursor.execute(sql)
         connection.close()
-        # Datensatz erzeugen
-        """
-        sql = "INSERT INTO warntype (name, type) VALUES('Katwarn', 'kat')"
-        self.insert_into(sql, "warn.db")
-        sql = "INSERT INTO warntype (name, type) VALUES('Biwapp', 'kat')"
-        self.insert_into(sql, "warn.db")
-        sql = "INSERT INTO warntype (name, type) VALUES('Mowas', 'kat')"
-        self.insert_into(sql, "warn.db")
-        sql = "INSERT INTO warntype (name, type) VALUES('DWD', 'Wetter')"
-        self.insert_into(sql, "warn.db")
-        sql = "INSERT INTO warntype (name, type) VALUES('Hochwasser Portal', 'kat')"
-        self.insert_into(sql, "warn.db")
-        sql = "INSERT INTO warntype (name, type) VALUES('Polizei', 'kat')"
-        self.insert_into(sql, "warn.db")
-        sql = "INSERT INTO warntype (name, type) VALUES('Covid', 'Covid')"
-        self.insert_into(sql, "warn.db")
-        """
-        # Datensatz erzeugen
-        # sql = "INSERT INTO personen VALUES('Schmitz', " \
-        #       "'Peter', 81343, 3750, '12.04.1958')"
-        # cursor.execute(sql)
-        # connection.commit()
-
-        # Datensatz erzeugen
-        # sql = "INSERT INTO personen VALUES('Mertens', " \
-        #      "'Julia', 2297, 3621.5, '30.12.1959')"
-        # cursor.execute(sql)
-        # connection.commit()
 
     @staticmethod
     def execute_db(sql, db):
@@ -126,7 +98,8 @@ class Database:
         conn.close()
         return rows
 
-    def check_if_exist(self, tbl_name, db, where, where_val):
+    @staticmethod
+    def check_if_exist(tbl_name, db, where, where_val):
         conn = sqlite3.connect(db)
         c = conn.cursor()
 

@@ -133,9 +133,9 @@ class TelegramBot:
                 now = datetime.now()
                 current_time = now.strftime("%d-%m-%Y %H:%M:%S")
                 # self.ui.sidebar_button_event("[{}] UID {} in chat {}: \n    {}".format(current_time, user_id, chat_id, text))
-                self.ui.sidebar_button_event("[{}] {}".format(current_time, text))
+                self.ui.insert_update("[{}] {}".format(current_time, text))
 
                 self.logger.info("Received message from user %s in chat %s: %s", user_id, chat_id, text)
                 msg = self.analyse_message(user_id, chat_id, text)
-
+                self.ui.insert_send_msg("[{} to {}] {}".format(current_time, chat_id, msg))
                 self.send_message(chat_id, msg)

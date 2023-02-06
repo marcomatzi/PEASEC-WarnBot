@@ -11,7 +11,7 @@ class App(customtkinter.CTk):
         super().__init__()
 
         # configure window
-        self.title("CustomTkinter complex_example.py")
+        self.title("[PEASEC WARNBOT] Administrations-Panel")
         self.geometry(f"{1100}x{580}")
 
         # configure grid layout (4x4)
@@ -50,11 +50,21 @@ class App(customtkinter.CTk):
         self.main_button_1.grid(row=3, column=3, padx=(20, 20), pady=(20, 20), sticky="nsew")
 
         # create textbox
-        self.textbox = customtkinter.CTkTextbox(self, width=250)
-        self.textbox.grid(row=0, column=1, padx=(20, 0), pady=(20, 0), sticky="nsew")
+        self.textbox_updates = customtkinter.CTkTextbox(self, width=250, state='disabled')
+        self.textbox_updates.grid(row=0, column=1, padx=(20, 0), pady=(30, 0), sticky="nsew")
+
+        self.textbox_sendmsg = customtkinter.CTkTextbox(self, width=250, state='disabled')
+        self.textbox_sendmsg.grid(row=1, column=1, padx=(20, 0), pady=(40, 0), sticky="nsew")
+
+        # create Label
+        self.label = customtkinter.CTkLabel(self, text="Incoming Messages")
+        self.label.grid(row=0, column=1, padx=(20, 0), pady=(0, 0), sticky="nw")
+
+        self.label2 = customtkinter.CTkLabel(self, text="Outgoing Messages")
+        self.label2.grid(row=1, column=1, padx=(20, 0), pady=(10, 0), sticky="nw")
 
         # create tabview
-        self.tabview = customtkinter.CTkTabview(self, width=250)
+        """self.tabview = customtkinter.CTkTabview(self, width=250)
         self.tabview.grid(row=0, column=2, padx=(20, 0), pady=(20, 0), sticky="nsew")
         self.tabview.add("CTkTabview")
         self.tabview.add("Tab 2")
@@ -123,28 +133,28 @@ class App(customtkinter.CTk):
         self.checkbox_2 = customtkinter.CTkCheckBox(master=self.checkbox_slider_frame)
         self.checkbox_2.grid(row=2, column=0, pady=(20, 0), padx=20, sticky="n")
         self.checkbox_3 = customtkinter.CTkCheckBox(master=self.checkbox_slider_frame)
-        self.checkbox_3.grid(row=3, column=0, pady=20, padx=20, sticky="n")
+        self.checkbox_3.grid(row=3, column=0, pady=20, padx=20, sticky="n")"""
 
         # set default values
         self.sidebar_button_3.configure(state="disabled", text="Disabled CTkButton")
-        self.checkbox_3.configure(state="disabled")
-        self.checkbox_1.select()
-        self.scrollable_frame_switches[0].select()
-        self.scrollable_frame_switches[4].select()
-        self.radio_button_3.configure(state="disabled")
+        # self.checkbox_3.configure(state="disabled")
+        # self.checkbox_1.select()
+        # self.scrollable_frame_switches[0].select()
+        # self.scrollable_frame_switches[4].select()
+        # self.radio_button_3.configure(state="disabled")
         self.appearance_mode_optionemenu.set("Dark")
-        self.scaling_optionemenu.set("100%")
-        self.optionmenu_1.set("CTkOptionmenu")
-        self.combobox_1.set("CTkComboBox")
-        self.slider_1.configure(command=self.progressbar_2.set)
-        self.slider_2.configure(command=self.progressbar_3.set)
-        self.progressbar_1.configure(mode="indeterminnate")
-        self.progressbar_1.start()
+        # self.scaling_optionemenu.set("100%")
+        # self.optionmenu_1.set("CTkOptionmenu")
+        # self.combobox_1.set("CTkComboBox")
+        # self.slider_1.configure(command=self.progressbar_2.set)
+        # self.slider_2.configure(command=self.progressbar_3.set)
+        # self.progressbar_1.configure(mode="indeterminnate")
+        # self.progressbar_1.start()
         # self.textbox.insert("0.0", "CTkTextbox\n\n" + "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua.\n\n" * 20)
-        self.textbox.insert("0.0", "CHat:\n\n")
+        self.textbox_updates.insert("0.0", "")
 
-        self.seg_button_1.configure(values=["CTkSegmentedButton", "Value 2", "Value 3"])
-        self.seg_button_1.set("Value 2")
+        # self.seg_button_1.configure(values=["CTkSegmentedButton", "Value 2", "Value 3"])
+        # self.seg_button_1.set("Value 2")
 
     def open_input_dialog_event(self):
         dialog = customtkinter.CTkInputDialog(text="Type in a number:", title="CTkInputDialog")
@@ -157,17 +167,30 @@ class App(customtkinter.CTk):
         new_scaling_float = int(new_scaling.replace("%", "")) / 100
         customtkinter.set_widget_scaling(new_scaling_float)
 
-    def sidebar_button_event(self, text: str):
+    def sidebar_button_event(self):
+        prev = self.textbox_updates.get("0.0", "end")
+        print(len(prev))
+        print(self.textbox_updates.get("0.0", "end"))
+        self.insert_update("Test")
+
+    def insert_update(self, text: str):
         # self.textbox.delete("0.0", "end")  # delete all text
         # self.textbox.delete("0.0", "end")
-        self.textbox.insert(customtkinter.END, text + "\n")
+        self.textbox_updates.configure(state="normal")
+        # self.textbox_updates.insert(customtkinter.END, text + "\n")
+        self.textbox_updates.insert("0.0", text + "\n")
+        self.textbox_updates.configure(state="disabled")
 
+    def insert_send_msg(self, text: str):
+        self.textbox_sendmsg.configure(state="normal")
+        self.textbox_sendmsg.insert("0.0", text + "\n")
+        self.textbox_sendmsg.configure(state="disabled")
 
 #if __name__ == "__main__":
-"""    def start(self):
+    def start(self):
         app = App()
-        app.mainloop()"""
+        app.mainloop()
 
-if __name__ == "__main__":
+"""if __name__ == "__main__":
     app = App()
-    app.mainloop()
+    app.mainloop()"""
