@@ -1,5 +1,7 @@
 import requests
 import logging
+
+import db_functions
 from users import Users
 
 class TelegramBot:
@@ -73,6 +75,8 @@ class TelegramBot:
                    "/stop (Pausieren des Dienstes)\n" \
                    "/kuendigen (Austrag aus dem Dienst)\n" \
                    "/help (Hilfe)"
+        elif text == "/count_users":
+            return "Aktuell sind mir " + str(db_functions.Database.count_rows("users")) + " aktive Nutzer bekannt. \nHoffentlich wachsen wir noch als Community!!"
         else:
             return "I received your message!"
 
@@ -123,7 +127,6 @@ class TelegramBot:
                     u.new_user(userdata)
 
                 text = message["text"]
-
                 self.logger.info("Received message from user %s in chat %s: %s", user_id, chat_id, text)
                 msg = self.analyse_message(user_id, chat_id, text)
 

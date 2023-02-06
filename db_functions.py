@@ -106,7 +106,8 @@ class Database:
         connection.commit()
         connection.close()
 
-    def get_query(self, table_name, where=None):
+    @staticmethod
+    def get_query(table_name, where=None):
         print("Print Tabelle: ", table_name)
         conn = sqlite3.connect("warn.db")
         c = conn.cursor()
@@ -148,6 +149,11 @@ class Database:
         print(liste)
         return userlist
 
+    @staticmethod
+    def count_rows(table, where=None):
+        arr = Database.get_query(table, where)
+        print("coming %", len(arr))
+        return len(arr)
 
 """db = Database()
 db.send_all_users_msg("test", "name like 'marco'")"""

@@ -1,21 +1,13 @@
+import db_functions
 from telegram_api import TelegramBot
 import logging
-
-"""def reply_func(text):
-    # Implement your reply logic here
-    return 'Automatic reply: ' + text
-
-bot = TelegramBot('5979163637:AAFsR0MwfvPb9FwB2oPQKPQJlnkmkcZmKmg')
-# root = tk.Tk()
-# app = Application(master=root)
-# app.update_listbox("Starting bot...")
-# app.mainloop()
-bot.run(reply_func)"""
+import asyncio
+from UI import TelegramBotGUI
 
 
-def main():
+async def main():
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
-    bot = TelegramBot("KEY")
+    bot = TelegramBot("5979163637:AAFsR0MwfvPb9FwB2oPQKPQJlnkmkcZmKmg")
 
     last_update_id = None
     while True:
@@ -30,5 +22,6 @@ def main():
         # Updates im json der Warn-API / DB
 
 
+
 if __name__ == '__main__':
-    main()
+    asyncio.run(main())
