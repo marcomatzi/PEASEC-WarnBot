@@ -1,6 +1,8 @@
 import os
 import sys
 import sqlite3
+from datetime import datetime
+
 
 
 class Database:
@@ -56,7 +58,9 @@ class Database:
         connection = sqlite3.connect(db)
         # Datensatz-Cursor erzeugen
         cursor = connection.cursor()
-        print(db + ": " + sql)
+        now = datetime.now()
+        current_time = now.strftime("%d-%m-%Y %H:%M:%S")
+        # print("[db_insert][" + current_time + "]" + db + ": " + sql)
         cursor.execute(sql)
         connection.commit()
         connection.close()
@@ -81,7 +85,7 @@ class Database:
 
     @staticmethod
     def get_query(table_name, where=None):
-        print("Print Tabelle: ", table_name)
+        # print("Print Tabelle: ", table_name)
         conn = sqlite3.connect("warn.db")
         c = conn.cursor()
 
@@ -113,20 +117,20 @@ class Database:
         conn.close()
         return result
 
-    def send_all_users_msg(self, text, where=None):
+    def get_users(self, where=None):
         userlist = self.get_query("users", where)
         liste = []
         for e in userlist:
             tmp = [e[2], e[5]]  # Zwischenspeichern von name und chat_id
             liste.append(tmp)  # In eine neue Liste einfügen, die nur name und chat_id beinhaltet
 
-        print(liste)
+        # print(liste)
         return userlist
 
     @staticmethod
     def count_rows(table, where=None):
         arr = Database.get_query(table, where)
-        print("coming %", len(arr))
+        # print("coming %", len(arr))
         return len(arr)
 
 

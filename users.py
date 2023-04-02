@@ -3,6 +3,7 @@
     Eintragen in die DB sowie versenden von Nachrichten
     -> Dauerhafte Ausführung der Module im Loop
 """
+import db_functions
 from db_functions import Database
 import logging
 
@@ -28,3 +29,4 @@ class Users:
             userdata[0], userdata[1], userdata[2])
         self.db.execute_db(query, "warn.db")
         self.logger.info("[NEW USER] Nutzer wurde erfolgreich mit der ID: %s angelegt!", self.uid)
+
