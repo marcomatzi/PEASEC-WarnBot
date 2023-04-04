@@ -81,14 +81,14 @@ class TelegramBot:
             params = {
                 "chat_id": chat_id,
                 "text": text,
-                "parse_mode": "html",
+                "parse_mode": "HTML",
                 "reply_markup": keyboard_json
             }
         else:
             params = {
                 "chat_id": chat_id,
                 "text": text,
-                "parse_mode": "html",
+                "parse_mode": "HTML",
             }
         response = requests.post(f"{self.base_url}/sendMessage", json=params)
         self.ui.insert_send_msg("[{} to {}] {}".format(current_time, chat_id, text))
@@ -203,7 +203,8 @@ class TelegramBot:
                     u.new_user(userdata)
                 if "text" in message:
                     text = message["text"]
-
+                else:
+                    text = "unknown"
             now = datetime.now()
             current_time = now.strftime("%d-%m-%Y %H:%M:%S")
             # self.ui.sidebar_button_event("[{}] UID {} in chat {}: \n    {}".format(current_time, user_id, chat_id, text))
@@ -212,11 +213,11 @@ class TelegramBot:
             self.logger.info("Received message from user %s in chat %s: %s", user_id, chat_id, text)
             msg = self.analyse_message(fname, chat_id, text)
             # TODO: Delete DEV Abfrage
-            if (chat_id == 784506299):
-                if isinstance(msg, list):
-                    for m in msg:
-                        self.ui.insert_send_msg("[{} to {}] {}".format(current_time, chat_id, m))
-                        self.send_message(chat_id, m, True)
-                else:
-                    self.ui.insert_send_msg("[{} to {}] {}".format(current_time, chat_id, msg))
-                    self.send_message(chat_id, msg)
+            #if (chat_id == 784506299):
+            if isinstance(msg, list):
+                for m in msg:
+                    self.ui.insert_send_msg("[{} to {}] {}".format(current_time, chat_id, m))
+                    self.send_message(chat_id, m, True)
+            else:
+                self.ui.insert_send_msg("[{} to {}] {}".format(current_time, chat_id, msg))
+                self.send_message(chat_id, msg)

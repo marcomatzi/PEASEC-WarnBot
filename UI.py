@@ -1,32 +1,56 @@
 import os
 import threading
 import time
+import re
 import tkinter
 import tkinter.messagebox
 import customtkinter
 
 from PIL import Image
 import sqlite3
-
+from db_functions import Database
 import telegram_api
 
 customtkinter.set_appearance_mode("System")  # Modes: "System" (standard), "Dark", "Light"
 customtkinter.set_default_color_theme("blue")  # Themes: "blue" (standard), "green", "dark-blue"
 var_info = "TEST"
 
+
+class ToplevelWindow(customtkinter.CTkToplevel):
+    def __init__(self, app, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.app = app  # save reference to the App instance
+        self.db = Database
+        self.geometry("900x500")
+        self.title("Warnmeldungen bearbeiten - Bachelorthesis Marco Matissek")
+        self.label = customtkinter.CTkLabel(self, text="ToplevelWindow -> ")
+        self.label.pack(padx=20, pady=20)
+
+        # update the button text on initial creation
+        self.update_button_text()
+
+    def update_button_text(self):
+        # get the button text from the App instance
+        button_text = self.app.home_entry.get()  # cget("attr") to get smth different.
+        # update the label with the button text
+        print(button_text)
+        # self.button_text.config(text="Button text: {}".format(button_text))
+
+
 class App(customtkinter.CTk):
     def __init__(self, token):
         super().__init__()
+        self.toplevel_window = None
 
         tb = telegram_api.TelegramBot(token, self)
 
-        #self.get_dbInfo()
+        # self.get_dbInfo()
 
         # configure window
-        #self.title("[PEASEC WARNBOT] Administrations-Panel")
+        # self.title("[PEASEC WARNBOT] Administrations-Panel")
         self.geometry(f"{1100}x{580}")
         self.title("PEASEC Warnbot - Bachelorthesis Marco Matissek")
-        #self.geometry("1050x450")
+        # self.geometry("1050x450")
 
         # set grid layout 1x2
         self.grid_rowconfigure(0, weight=1)
@@ -108,7 +132,7 @@ class App(customtkinter.CTk):
                                                       fg_color="transparent", text_color=("gray10", "gray90"),
                                                       hover_color=("gray70", "gray30"),
                                                       image=self.collection_image, anchor="w",
-                                                      command=self.frame_4_button_event)
+                                                      command=self.open_toplevel)
         self.frame_4_button.grid(row=4, column=0, sticky="ew")
 
         self.appearance_mode_menu = customtkinter.CTkOptionMenu(self.navigation_frame,
@@ -126,13 +150,13 @@ class App(customtkinter.CTk):
         self.home_frame.grid_columnconfigure((2, 3), weight=0)
         self.home_frame.grid_rowconfigure((0, 1, 2), weight=1)
 
-
         # self.home_frame_large_image_label = customtkinter.CTkLabel(self.home_frame, text="Anzahl Warnings: " + str(count))
         # self.home_frame_large_image_label.grid(row=1, column=3, padx=0, pady=0)
 
-        #text_var = tkinter.StringVar(value="Anzahl User: " + str(count2))
-        self.home_label = customtkinter.CTkLabel(self.home_frame, anchor="ne", justify="left", text="tmp\nTemp2")#text="Anzahl User: " + str(count2) + "\nAnzahl Warnings: " + str(count))
-        self.home_label.grid(row=0, column=3, padx=0, pady=0)
+        # text_var = tkinter.StringVar(value="Anzahl User: " + str(count2))
+        self.home_label_dbInfo = customtkinter.CTkLabel(self.home_frame, anchor="ne", justify="left",
+                                                 text="tmp\nTemp2")  # text="Anzahl User: " + str(count2) + "\nAnzahl Warnings: " + str(count))
+        self.home_label_dbInfo.grid(row=0, column=3, padx=0, pady=0)
 
         # create main entry and button
 
@@ -176,11 +200,49 @@ class App(customtkinter.CTk):
             Warnungen Frame
         """
         self.second_frame = customtkinter.CTkFrame(self, corner_radius=0, fg_color="transparent")
-        self.second_frame.grid_columnconfigure(0, weight=1)
+        """self.second_frame.grid_columnconfigure(1, weight=1)
+        self.second_frame.grid_columnconfigure((2, 3), weight=0)
+        self.second_frame.grid_rowconfigure((0, 1, 2), weight=1)"""
 
+        ## LOGO
         self.second_frame_large_image_label = customtkinter.CTkLabel(self.second_frame, text="",
                                                                      image=self.large_test_image)
-        self.second_frame_large_image_label.grid(row=0, column=0, padx=20, pady=10)
+        self.second_frame_large_image_label.grid(row=0, column=0, padx=0, pady=0, columnspan=3)
+
+        ## Dropdown
+        results = []
+        conn = sqlite3.connect('warn.db')
+        c = conn.cursor()
+        c.execute("SELECT DISTINCT(wid), headline FROM warning_information")
+        res_values = c.fetchall()
+        print(len(res_values))
+        for i in res_values:
+            results.append(str(i[1]) + " (" + str(i[0]) + ")")
+
+        self.combobox_warnungen = customtkinter.CTkComboBox(master=self.second_frame, values=results,
+                                                            command=self.combobox_callback)
+        self.combobox_warnungen.grid(row=2, column=3, padx=(20, 0), pady=(0, 0), sticky="nw")
+        # self.combobox_warnungen.set("option 2")  # set initial value
+
+        self.second_title = customtkinter.CTkEntry(master=self.second_frame,
+                                                   placeholder_text="CTkEntry",
+                                                   width=600,
+                                                   height=25,
+                                                   border_width=2,
+                                                   corner_radius=10)
+        self.second_title.grid(row=2, column=0, padx=(20, 0), pady=(0, 0), sticky="nw", columnspan=2)
+
+        self.second_desc = customtkinter.CTkTextbox(self.second_frame, width=300, state='normal')
+        self.second_desc.grid(row=4, column=0, padx=(20, 0), pady=(0, 0), sticky="nsew")
+        self.second_desc.insert("0.0", "Wähle eine Warnung aus!")
+
+        ## Labels
+        self.second_label = customtkinter.CTkLabel(self.second_frame, text="Wähle Warnung:")
+        self.second_label.grid(row=1, column=3, padx=(20, 0), pady=(0, 0), sticky="nw")
+        self.second_label = customtkinter.CTkLabel(self.second_frame, text="Titel:")
+        self.second_label.grid(row=1, column=0, padx=(20, 0), pady=(0, 0), sticky="nw")
+        self.second_label = customtkinter.CTkLabel(self.second_frame, text="Beschreibung:")
+        self.second_label.grid(row=3, column=0, padx=(20, 0), pady=(0, 0), sticky="nw")
 
         """
             Evaluierung Frame
@@ -196,11 +258,9 @@ class App(customtkinter.CTk):
         # select default frame
         self.select_frame_by_name("home")
 
-        #self.four_frame.grid_columnconfigure(1, weight=1)
-        #self.four_frame.grid_columnconfigure((2, 3), weight=0)
-        #self.four_frame.grid_rowconfigure((0, 1, 2), weight=1)
-
-
+        # self.four_frame.grid_columnconfigure(1, weight=1)
+        # self.four_frame.grid_columnconfigure((2, 3), weight=0)
+        # self.four_frame.grid_rowconfigure((0, 1, 2), weight=1)
 
     def select_frame_by_name(self, name):
         # set button color for selected button
@@ -231,6 +291,7 @@ class App(customtkinter.CTk):
             self.four_frame.grid_forget()
 
     def home_button_event(self):
+        self.get_dbInfo()
         self.select_frame_by_name("home")
 
     def frame_2_button_event(self):
@@ -242,8 +303,45 @@ class App(customtkinter.CTk):
     def frame_4_button_event(self):
         self.select_frame_by_name("frame_4")
 
-    #def change_appearance_mode_event(self, new_appearance_mode):
+    # def change_appearance_mode_event(self, new_appearance_mode):
     #    customtkinter.set_appearance_mode(new_appearance_mode)
+    def open_toplevel(self):
+        if self.toplevel_window is None or not self.toplevel_window.winfo_exists():
+            self.toplevel_window = ToplevelWindow(self, self)  # create window if its None or destroyed
+        else:
+            self.toplevel_window.focus()  # if window exists focus it
+
+    def fill_values(self):
+        results = []
+        conn = sqlite3.connect('warn.db')
+        c = conn.cursor()
+        c.execute("SELECT wid FROM warnings")
+        res_values = c.fetchall()
+
+        for i in res_values:
+            print(i)
+
+        # return results
+
+    def combobox_callback(self, choice):
+        # Definiere einen Regex, um den Text innerhalb der letzten Klammern zu finden
+        regex = r"\(([^()]+)\)[^()]*$"
+
+        # Suchen des Regex innerhalb des Textes
+        match = re.search(regex, choice)
+
+        # Überprüfen, ob ein Treffer gefunden wurde
+        if match:
+            # Extrahiere den Text aus dem Treffer
+            text_in_klammern = match.group(1)
+
+        val = Database.get_query("warning_information", "wid = '{}'".format(text_in_klammern))
+
+        print("combobox dropdown clicked:", choice)
+        print(val)
+        self.second_desc.delete("0.0", "end")
+        self.second_desc.insert("0.0", val[0][9])
+        self.second_title.configure(placeholder_text=text_in_klammern)
 
     def open_input_dialog_event(self):
         dialog = customtkinter.CTkInputDialog(text="Type in a number:", title="CTkInputDialog")
@@ -271,17 +369,49 @@ class App(customtkinter.CTk):
         self.home_textbox_updates.configure(state="disabled")
 
     def insert_send_msg(self, text: str):
+        """
+        Fügt die ankommenden Nachrichten in die textbox_sendmsg auf dem Home-Bildschirm
+        :param text:
+        :return:
+        """
         self.home_textbox_sendmsg.configure(state="normal")
         self.home_textbox_sendmsg.insert("0.0", text + "\n")
         self.home_textbox_sendmsg.configure(state="disabled")
 
+    def replace_tags(self, text):
+        """
+        Ersetzt die Zeichenfolge im text, die von Telegram nicht erkannt werden
+        :param text:
+        :return: string
+        """
+        # Ersetze <br/> durch \n
+        text = text.replace('\\', '')
+        text = text.replace("<br/>", "\n")
+
+        # Ersetze <i> durch *
+        text = text.replace("<p>", "\n\n")
+
+        # Ersetze li
+        text = text.replace("<li>", "-")
+        text = text.replace("</li>", "\n")
+        # Lösche
+        text = text.replace("</p>", "")
+        text = text.replace("</ul>", "")
+        text = text.replace("<ul>", "")
+
+        return text
+
     def send_all_fnc(self):
-
+        """
+        Sendet Nachrichten an ALLE Nutzer vom Bot
+        Kann auf bestimmte Nutzer limitiert werden.
+        :return:
+        """
         txt = self.home_entry.get()
-        print(str(txt))     
-
+        print(str(txt))
+        txt = self.replace_tags(txt)
         tb = telegram_api.TelegramBot("5979163637:AAFsR0MwfvPb9FwB2oPQKPQJlnkmkcZmKmg", self)
-        tb.send_multiple_message(txt)
+        tb.send_multiple_message(txt, "chatid = 784506299")
 
         self.home_entry.delete(0, len(txt))
 
@@ -295,18 +425,17 @@ class App(customtkinter.CTk):
         c.execute("SELECT COUNT(*) FROM users")
         count2 = c.fetchone()[0]
         print("Anzahl User: " + str(count2) + "\nAnzahl Warnings: " + str(count))
-        self.home_label.config(text="Anzahl User: " + str(count2) + "\nAnzahl Warnings: " + str(count))
+        self.home_label_dbInfo.configure(text="Anzahl User: " + str(count2) + "\nAnzahl Warnings: " + str(count))
 
-        #threading.Timer(10, self.get_dbInfo).start()
-        #self.home_label = customtkinter.CTkLabel(self.home_frame, anchor="ne", justify="left", text="Anzahl User: " + str(count2) + "\nAnzahl Warnings: " + str(count))
+        # threading.Timer(10, self.get_dbInfo).start()
+        # self.home_label = customtkinter.CTkLabel(self.home_frame, anchor="ne", justify="left", text="Anzahl User: " + str(count2) + "\nAnzahl Warnings: " + str(count))
 
-"""
+
 # if __name__ == "__main__":
-    def start(self):
-        app = App()
-        app.mainloop()
+# def start(self):
+#    app = App()
+#    app.mainloop()
 
-if __name__ == "__main__":
-    app = App()
-    app.mainloop()
-"""
+"""if __name__ == "__main__":
+    app = App("5979163637:AAFsR0MwfvPb9FwB2oPQKPQJlnkmkcZmKmg")
+    app.mainloop()"""

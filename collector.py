@@ -219,7 +219,7 @@ class Collector:
                                       dataInfo2.get("web", ""),
                                       dataInfo['area'][0]['areaDesc'], dataInfo2.get("instruction", ""),
                                       dataInfo2.get("certainty", ""), dataInfo2.get("onset", ""),
-                                      dataInfo2.get("expires", ""))
+                                      dataInfo2.get("expires", ""), dataInfo2.get("eventCode", ""))
 
             """
             for d in data:
@@ -238,16 +238,16 @@ class Collector:
         # Database.execute_db(query, self.__DB)
 
     def write_db_information(self, wid, ver, sender, status, msgType, scope, event, urgency, severity, effective,
-                             senderName, headline, desc, web, area, instruction, certainty, onset, expires):
-        query = "INSERT INTO warning_information (wid,version,sender,status,msgType,scope,senderName,headline,text,web,areaDesc,geo,image,event,urgency, severity, certainty, DateEffective,DateOnset,DateExpires,instruction)" \
+                             senderName, headline, desc, web, area, instruction, certainty, onset, expires, eventCode):
+
+        query = "INSERT INTO warning_information (wid,version,sender,status,msgType,scope,senderName,headline,text,web,areaDesc,codeIMG,image,event,urgency, severity, certainty, DateEffective,DateOnset,DateExpires,instruction)" \
                 "VALUES ('{}',{},'{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}')".format(
             wid, ver, sender, status, msgType, scope, senderName, headline, desc, web, area,
-            "GEO_DATA", self.get_logo(sender), event, urgency, severity, certainty, effective, onset, expires,
+            self.get_codeimg(eventCode), self.get_logo(sender), event, urgency, severity, certainty, effective, onset, expires,
             instruction)
         Database.execute_db(query, self.__DB)
 
     def get_logo(self, sender) -> str:
-        # TODO: Event codes noch hinzufügen!
         url = "https://nina.api.proxy.bund.dev/api31/appdata/gsb/logos/logos.json"
         response = requests.get(f"{url}", {"timeout": 100})
 
@@ -257,11 +257,31 @@ class Collector:
             json_data = json.dumps(data)
             data = json.loads(json_data)
             for d in data['logos']:
-                print(d)
+                #print(d)
                 if str(sender) in d['senderId']:
                     img = d['image']
-                    print("https://nina.api.proxy.bund.dev/api31/appdata/gsb/logos/{}".format(img))
+                    #print("https://nina.api.proxy.bund.dev/api31/appdata/gsb/logos/{}".format(img))
                     return "https://nina.api.proxy.bund.dev/api31/appdata/gsb/logos/{}".format(img)
+        else:
+            print(response.status_code)
+
+    def get_codeimg(self, eventcode) -> str:
+        url = "https://nina.api.proxy.bund.dev/api31/appdata/gsb/eventCodes/eventCodes.json"
+        response = requests.get(f"{url}", {"timeout": 100})
+        if len(eventcode) < 1:
+            return "None"
+
+        if response.status_code == 200:
+            data = response.json()
+
+            json_data = json.dumps(data)
+            data = json.loads(json_data)
+            for d in data['eventCodes']:
+                #print(d)
+                if str(eventcode) in d['eventCode']:
+                    img = d['imageUrl']
+                    #print("https://nina.api.proxy.bund.dev/api31/appdata/gsb/eventCodes/{}".format(img))
+                    return "https://nina.api.proxy.bund.dev/api31/appdata/gsb/eventCodes/{}".format(img)
         else:
             print(response.status_code)
 
@@ -315,13 +335,9 @@ class Collector:
             return self.point_in_multipolygon(geojson["coordinates"], point)
 
 
-if __name__ == "__main__":
+"""if __name__ == "__main__":
     server = f'https://warnung.bund.de/api31'
     db = "warn.db"
     c = Collector(server, db)
     c.force_update_info()
-
-"""server = f'https://warnung.bund.de/api31'
-db = "warn.db"
-c = Collector(server, db)
-c.catch_warnings(None)"""
+"""
