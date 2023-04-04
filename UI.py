@@ -2,11 +2,15 @@ import os
 import threading
 import time
 import re
+import io
 import tkinter
+from io import BytesIO
 import tkinter.messagebox
+import urllib
+
 import customtkinter
 
-from PIL import Image
+from PIL import Image, ImageTk
 import sqlite3
 from db_functions import Database
 import telegram_api
@@ -155,7 +159,7 @@ class App(customtkinter.CTk):
 
         # text_var = tkinter.StringVar(value="Anzahl User: " + str(count2))
         self.home_label_dbInfo = customtkinter.CTkLabel(self.home_frame, anchor="ne", justify="left",
-                                                 text="tmp\nTemp2")  # text="Anzahl User: " + str(count2) + "\nAnzahl Warnings: " + str(count))
+                                                        text="tmp\nTemp2")  # text="Anzahl User: " + str(count2) + "\nAnzahl Warnings: " + str(count))
         self.home_label_dbInfo.grid(row=0, column=3, padx=0, pady=0)
 
         # create main entry and button
@@ -200,15 +204,16 @@ class App(customtkinter.CTk):
             Warnungen Frame
         """
         self.second_frame = customtkinter.CTkFrame(self, corner_radius=0, fg_color="transparent")
-        """self.second_frame.grid_columnconfigure(1, weight=1)
+        self.second_frame.grid_columnconfigure(1, weight=1)
         self.second_frame.grid_columnconfigure((2, 3), weight=0)
-        self.second_frame.grid_rowconfigure((0, 1, 2), weight=1)"""
-
+        self.second_frame.grid_rowconfigure((9, 10), weight=0)
         ## LOGO
-        self.second_frame_large_image_label = customtkinter.CTkLabel(self.second_frame, text="",
-                                                                     image=self.large_test_image)
-        self.second_frame_large_image_label.grid(row=0, column=0, padx=0, pady=0, columnspan=3)
-
+        # self.second_frame_large_image_label = customtkinter.CTkLabel(self.second_frame, text="",
+        #                                                             image=self.large_test_image)
+        # self.second_frame_large_image_label.grid(row=0, column=0, padx=0, pady=0, columnspan=3)
+        label = customtkinter.CTkLabel(master=self.second_frame, text="WARNMELDUNGEN OVERVIEW", font=("Arial", 30),
+                                       text_color="#4a97cf")
+        label.grid(row=0, column=0, padx=20, pady=(20, 20), columnspan=4, sticky="nesw")
         ## Dropdown
         results = []
         conn = sqlite3.connect('warn.db')
@@ -220,29 +225,43 @@ class App(customtkinter.CTk):
             results.append(str(i[1]) + " (" + str(i[0]) + ")")
 
         self.combobox_warnungen = customtkinter.CTkComboBox(master=self.second_frame, values=results,
-                                                            command=self.combobox_callback)
-        self.combobox_warnungen.grid(row=2, column=3, padx=(20, 0), pady=(0, 0), sticky="nw")
+                                                            command=self.combobox_callback, width=600)
+        self.combobox_warnungen.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="nw", columnspan=3)
         # self.combobox_warnungen.set("option 2")  # set initial value
 
         self.second_title = customtkinter.CTkEntry(master=self.second_frame,
-                                                   placeholder_text="CTkEntry",
+                                                   placeholder_text="Wähle eine Warnmeldung aus",
                                                    width=600,
                                                    height=25,
                                                    border_width=2,
                                                    corner_radius=10)
-        self.second_title.grid(row=2, column=0, padx=(20, 0), pady=(0, 0), sticky="nw", columnspan=2)
+        self.second_title.grid(row=2, column=1, padx=(0, 0), pady=(5, 0), sticky="nw", columnspan=2)
 
         self.second_desc = customtkinter.CTkTextbox(self.second_frame, width=300, state='normal')
-        self.second_desc.grid(row=4, column=0, padx=(20, 0), pady=(0, 0), sticky="nsew")
+        self.second_desc.grid(row=4, column=0, padx=(20, 0), pady=(0, 0), sticky="nsew", columnspan=2)
         self.second_desc.insert("0.0", "Wähle eine Warnung aus!")
+
+        self.second_img = customtkinter.CTkImage(
+            light_image=Image.open(os.path.join(image_path, "platzhalter.png")).resize((256, 256)),
+            dark_image=Image.open(os.path.join(image_path, "platzhalter.png")).resize((256, 256)), size=(256, 256))
+        self.second_imgframe = customtkinter.CTkLabel(self.second_frame, text="", image=self.second_img)
+        self.second_imgframe.grid(row=4, column=3, padx=0, pady=0)
+
+        self.second_codeiiimg = customtkinter.CTkImage(
+            light_image=Image.open(os.path.join(image_path, "platzhalter.png")).resize((256, 256)),
+            dark_image=Image.open(os.path.join(image_path, "platzhalter.png")).resize((256, 256)), size=(20, 20))
+        self.second_codeImg = customtkinter.CTkLabel(self.second_frame, text="", image=self.second_codeiiimg)
+        self.second_codeImg.grid(row=2, column=3, padx=0, pady=0)
 
         ## Labels
         self.second_label = customtkinter.CTkLabel(self.second_frame, text="Wähle Warnung:")
-        self.second_label.grid(row=1, column=3, padx=(20, 0), pady=(0, 0), sticky="nw")
-        self.second_label = customtkinter.CTkLabel(self.second_frame, text="Titel:")
         self.second_label.grid(row=1, column=0, padx=(20, 0), pady=(0, 0), sticky="nw")
+        self.second_label = customtkinter.CTkLabel(self.second_frame, text="Titel:")
+        self.second_label.grid(row=2, column=0, padx=(20, 0), pady=(0, 0), sticky="nw")
         self.second_label = customtkinter.CTkLabel(self.second_frame, text="Beschreibung:")
         self.second_label.grid(row=3, column=0, padx=(20, 0), pady=(0, 0), sticky="nw")
+        self.second_label = customtkinter.CTkLabel(self.second_frame, text="Bild:")
+        self.second_label.grid(row=3, column=3, padx=(20, 0), pady=(0, 0), sticky="nw")
 
         """
             Evaluierung Frame
@@ -324,6 +343,11 @@ class App(customtkinter.CTk):
         # return results
 
     def combobox_callback(self, choice):
+        """
+        Funktion um die Userform zu füllen, mit den Informationen der aktuellen Meldung!
+        :param choice:
+        :return:
+        """
         # Definiere einen Regex, um den Text innerhalb der letzten Klammern zu finden
         regex = r"\(([^()]+)\)[^()]*$"
 
@@ -337,11 +361,29 @@ class App(customtkinter.CTk):
 
         val = Database.get_query("warning_information", "wid = '{}'".format(text_in_klammern))
 
-        print("combobox dropdown clicked:", choice)
-        print(val)
+        # print("combobox dropdown clicked:", choice)
+        # print(val)
         self.second_desc.delete("0.0", "end")
         self.second_desc.insert("0.0", val[0][9])
-        self.second_title.configure(placeholder_text=text_in_klammern)
+        self.second_title.configure(placeholder_text=val[0][8])
+
+        self.second_img.configure(light_image=self.pull_img_url(str(val[0][13])),
+                                  dark_image=self.pull_img_url(str(val[0][13])))
+
+        self.second_codeiiimg.configure(light_image=self.pull_img_url(str(val[0][12])),
+                                        dark_image=self.pull_img_url(str(val[0][12])))
+
+    def pull_img_url(self, url):
+        if url == 'None':
+            return Image.open(os.path.join("Test/test_images/platzhalter.png")).resize((256, 256))
+
+        response = urllib.request.urlopen(url)
+        img_data = response.read()
+
+        # Create a PIL Image object from the image data
+        pil_image = Image.open(io.BytesIO(img_data))
+        pil_image = pil_image.resize((256, 256))
+        return pil_image
 
     def open_input_dialog_event(self):
         dialog = customtkinter.CTkInputDialog(text="Type in a number:", title="CTkInputDialog")
@@ -436,6 +478,6 @@ class App(customtkinter.CTk):
 #    app = App()
 #    app.mainloop()
 
-"""if __name__ == "__main__":
+if __name__ == "__main__":
     app = App("5979163637:AAFsR0MwfvPb9FwB2oPQKPQJlnkmkcZmKmg")
-    app.mainloop()"""
+    app.mainloop()

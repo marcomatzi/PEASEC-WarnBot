@@ -126,8 +126,10 @@ class Collector:
 
             if "de" in m_title:
                 m_title_de = m_title['de'].replace("'", "''")
+                m_title_de = m_title_de.replace("`", "''")
             if "en" in m_title:
                 m_title_en = m_title['en'].replace("'", "''")
+                m_title_en = m_title_en.replace("`", "''")
 
             if "kat" in m_id:
                 m_source = "kat"
@@ -210,6 +212,14 @@ class Collector:
                 dataInfo2 = json.loads(json_data)
 
                 # print(str(d) + ': ' + str(data[d]))
+                str_info = str(dataInfo2.get("description", ""))
+                str_info = str_info.replace("`", "''")
+
+                str_inst = str(dataInfo2.get("instruction", ""))
+                str_inst = str_inst.replace("`", "''")
+
+                str_headline = str(dataInfo2.get("headline", ""))
+                str_headline = str_headline.replace("`", "''")
 
             self.write_db_information(wid, ver, data['sender'], data['status'], data['msgType'], data['scope'],
                                       dataInfo2.get("event", ""), dataInfo2.get("urgency", ""),
@@ -245,6 +255,7 @@ class Collector:
             wid, ver, sender, status, msgType, scope, senderName, headline, desc, web, area,
             self.get_codeimg(eventCode), self.get_logo(sender), event, urgency, severity, certainty, effective, onset, expires,
             instruction)
+        #print(query)
         Database.execute_db(query, self.__DB)
 
     def get_logo(self, sender) -> str:

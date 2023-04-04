@@ -61,6 +61,20 @@ class Database:
         now = datetime.now()
         current_time = now.strftime("%d-%m-%Y %H:%M:%S")
         # print("[db_insert][" + current_time + "]" + db + ": " + sql)
+        """        
+        #### REPLACE
+        # split the query by comma
+        query_list = sql.split(',')
+
+        # iterate over each column
+        for i in range(len(query_list)):
+            # check if the column has ' or "
+            if "'" in query_list[i] or '"' in query_list[i]:
+                # replace ' or " with -
+                query_list[i] = query_list[i][1:-1].replace("'", "''")
+                query_list[i] = query_list[i].replace("`", "''")
+        """
+
         cursor.execute(sql)
         connection.commit()
         connection.close()
