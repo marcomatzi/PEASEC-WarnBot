@@ -5,17 +5,20 @@ import re
 import io
 import tkinter
 from io import BytesIO
-import tkinter.messagebox
+from  tkinter import messagebox
 import urllib
 
 import customtkinter
 
 from PIL import Image, ImageTk
 import sqlite3
+
+from users import Users
+from user_group import UserGroup
 from db_functions import Database
 import telegram_api
 
-customtkinter.set_appearance_mode("System")  # Modes: "System" (standard), "Dark", "Light"
+customtkinter.set_appearance_mode("Light")  # Modes: "System" (standard), "Dark", "Light"
 customtkinter.set_default_color_theme("blue")  # Themes: "blue" (standard), "green", "dark-blue"
 var_info = "TEST"
 
@@ -33,6 +36,7 @@ class ToplevelWindow(customtkinter.CTkToplevel):
         # update the button text on initial creation
         self.update_button_text()
 
+
     def update_button_text(self):
         # get the button text from the App instance
         button_text = self.app.home_entry.get()  # cget("attr") to get smth different.
@@ -47,8 +51,6 @@ class App(customtkinter.CTk):
         self.toplevel_window = None
 
         tb = telegram_api.TelegramBot(token, self)
-
-        # self.get_dbInfo()
 
         # configure window
         # self.title("[PEASEC WARNBOT] Administrations-Panel")
@@ -67,6 +69,8 @@ class App(customtkinter.CTk):
                                                  size=(40, 40))
         self.large_test_image = customtkinter.CTkImage(Image.open(os.path.join(image_path, "large_test_image.png")),
                                                        size=(500, 150))
+        self.banner_home = customtkinter.CTkImage(Image.open(os.path.join("images/PEASEC_WARNBOT.png")),
+                                                       size=(600, 150))
         self.gradient_jpg = customtkinter.CTkImage(Image.open(os.path.join(image_path, "bg_gradient.jpg")),
                                                    size=(500, 150))
         self.image_icon_image = customtkinter.CTkImage(Image.open(os.path.join(image_path, "image_icon_light.png")),
@@ -100,7 +104,7 @@ class App(customtkinter.CTk):
         # create navigation frame
         self.navigation_frame = customtkinter.CTkFrame(self, corner_radius=0)
         self.navigation_frame.grid(row=0, column=0, sticky="nsew")
-        self.navigation_frame.grid_rowconfigure(5, weight=1)
+        self.navigation_frame.grid_rowconfigure(7, weight=1)
 
         self.navigation_frame_label = customtkinter.CTkLabel(self.navigation_frame, text="  PEASEC WARNBOT",
                                                              image=self.logo_image,
@@ -139,10 +143,26 @@ class App(customtkinter.CTk):
                                                       command=self.open_toplevel)
         self.frame_4_button.grid(row=4, column=0, sticky="ew")
 
+        self.frame_5_button = customtkinter.CTkButton(self.navigation_frame, corner_radius=0, height=40,
+                                                      border_spacing=10, text="Benutzer",
+                                                      fg_color="transparent", text_color=("gray10", "gray90"),
+                                                      hover_color=("gray70", "gray30"),
+                                                      image=self.add_user_image, anchor="w",
+                                                      command=self.frame_5_button_event)
+        self.frame_5_button.grid(row=5, column=0, sticky="ew")
+
+        self.frame_6_button = customtkinter.CTkButton(self.navigation_frame, corner_radius=0, height=40,
+                                                      border_spacing=10, text="Gruppen",
+                                                      fg_color="transparent", text_color=("gray10", "gray90"),
+                                                      hover_color=("gray70", "gray30"),
+                                                      image=self.add_user_image, anchor="w",
+                                                      command=self.frame_6_button_event)
+        self.frame_6_button.grid(row=6, column=0, sticky="ew")
+
         self.appearance_mode_menu = customtkinter.CTkOptionMenu(self.navigation_frame,
                                                                 values=["Light", "Dark", "System"],
                                                                 command=self.change_appearance_mode_event)
-        self.appearance_mode_menu.grid(row=6, column=0, padx=20, pady=20, sticky="s")
+        self.appearance_mode_menu.grid(row=7, column=0, padx=20, pady=20, sticky="s")
 
         """
             Home Frame
@@ -153,7 +173,6 @@ class App(customtkinter.CTk):
         self.home_frame.grid_columnconfigure(1, weight=1)
         self.home_frame.grid_columnconfigure((2, 3), weight=0)
         self.home_frame.grid_rowconfigure((0, 1, 2), weight=1)
-
         # self.home_frame_large_image_label = customtkinter.CTkLabel(self.home_frame, text="Anzahl Warnings: " + str(count))
         # self.home_frame_large_image_label.grid(row=1, column=3, padx=0, pady=0)
 
@@ -188,7 +207,7 @@ class App(customtkinter.CTk):
         self.home_label2.grid(row=1, column=2, padx=(20, 0), pady=(0, 0), sticky="nw")
 
         self.home_frame_large_image_label = customtkinter.CTkLabel(self.home_frame, text="",
-                                                                   image=self.large_test_image)
+                                                                   image=self.banner_home)
         self.home_frame_large_image_label.grid(row=0, column=0, padx=20, pady=10, columnspan=3)
 
         """
@@ -211,9 +230,10 @@ class App(customtkinter.CTk):
         # self.second_frame_large_image_label = customtkinter.CTkLabel(self.second_frame, text="",
         #                                                             image=self.large_test_image)
         # self.second_frame_large_image_label.grid(row=0, column=0, padx=0, pady=0, columnspan=3)
-        label = customtkinter.CTkLabel(master=self.second_frame, text="WARNMELDUNGEN OVERVIEW", font=("Arial", 30),
-                                       text_color="#4a97cf")
-        label.grid(row=0, column=0, padx=20, pady=(20, 20), columnspan=4, sticky="nesw")
+        self.second_frame.label = customtkinter.CTkLabel(master=self.second_frame, text="WARNMELDUNGEN OVERVIEW",
+                                                         font=("Arial", 30),
+                                                         text_color="#4a97cf")
+        self.second_frame.label.grid(row=0, column=0, padx=20, pady=(20, 20), columnspan=4, sticky="nesw")
         ## Dropdown
         results = []
         conn = sqlite3.connect('warn.db')
@@ -223,7 +243,6 @@ class App(customtkinter.CTk):
         print(len(res_values))
         for i in res_values:
             results.append(str(i[1]) + " (" + str(i[0]) + ")")
-
         self.combobox_warnungen = customtkinter.CTkComboBox(master=self.second_frame, values=results,
                                                             command=self.combobox_callback, width=600)
         self.combobox_warnungen.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="nw", columnspan=3)
@@ -251,7 +270,9 @@ class App(customtkinter.CTk):
             light_image=Image.open(os.path.join(image_path, "platzhalter.png")).resize((256, 256)),
             dark_image=Image.open(os.path.join(image_path, "platzhalter.png")).resize((256, 256)), size=(20, 20))
         self.second_codeImg = customtkinter.CTkLabel(self.second_frame, text="", image=self.second_codeiiimg)
-        self.second_codeImg.grid(row=2, column=3, padx=0, pady=0)
+        self.second_codeImg.grid(row=2, column=3, padx=0, pady=0, sticky="nw")
+        self.second_codeImglabel = customtkinter.CTkLabel(self.second_frame, text="Event: n/A")
+        self.second_codeImglabel.grid(row=2, column=3, padx=(25, 0), pady=(0, 0), sticky="nw")
 
         ## Labels
         self.second_label = customtkinter.CTkLabel(self.second_frame, text="Wähle Warnung:")
@@ -274,8 +295,210 @@ class App(customtkinter.CTk):
         self.four_frame = customtkinter.CTkFrame(self, corner_radius=0, fg_color="transparent")
         self.four_frame.grid(row=4, column=0, padx=20, pady=10)
 
+        """
+            Verwaltung Benutzer
+        """
+        self.five_frame = customtkinter.CTkFrame(self, corner_radius=0, fg_color="transparent")
+        self.five_frame.grid_columnconfigure(1, weight=1)
+        self.five_frame.grid_columnconfigure((3, 4), weight=0)
+        self.five_frame.grid_rowconfigure((7, 8), weight=0)
+        ## LOGO
+        self.five_frame.label = customtkinter.CTkLabel(master=self.five_frame, text="BENUTZERVERWALTUNG",
+                                                       font=("Arial", 30),
+                                                       text_color="#4a97cf")
+        self.five_frame.label.grid(row=0, column=0, padx=20, pady=(20, 20), columnspan=6, sticky="nesw")
+
+        ## Select User
+        u = Users(0)
+        self.combobox_users = customtkinter.CTkComboBox(master=self.five_frame, values=u.get_all_users(),
+                                                        command=self.combobox_callback_users, width=600)
+        self.combobox_users.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="nw", columnspan=1)
+
+        ## Textboxen usw
+        self.txtb_id = customtkinter.CTkEntry(master=self.five_frame,
+                                              placeholder_text="Wähle einen User",
+                                              width=200,
+                                              height=25,
+                                              border_width=2,
+                                              corner_radius=10)
+        self.txtb_id.grid(row=2, column=1, padx=(0, 0), pady=(5, 0), sticky="nw", columnspan=1)
+
+        self.txtb_Name = customtkinter.CTkEntry(master=self.five_frame,
+                                                placeholder_text="Wähle einen User",
+                                                width=200,
+                                                height=25,
+                                                border_width=2,
+                                                corner_radius=10)
+        self.txtb_Name.grid(row=2, column=3, padx=(0, 0), pady=(5, 0), sticky="nw", columnspan=1)
+
+        self.txtb_ChatID = customtkinter.CTkEntry(master=self.five_frame,
+                                                  placeholder_text="Wähle einen User",
+                                                  width=200,
+                                                  height=25,
+                                                  border_width=2,
+                                                  corner_radius=10)
+        self.txtb_ChatID.grid(row=3, column=1, padx=(0, 0), pady=(5, 0), sticky="nw", columnspan=1)
+
+        self.txtb_UID = customtkinter.CTkEntry(master=self.five_frame,
+                                               placeholder_text="Wähle einen User",
+                                               width=200,
+                                               height=25,
+                                               border_width=2,
+                                               corner_radius=10)
+        self.txtb_UID.grid(row=3, column=3, padx=(0, 0), pady=(5, 0), sticky="nw", columnspan=1)
+
+        self.txtb_lang = customtkinter.CTkEntry(master=self.five_frame,
+                                                placeholder_text="Wähle einen User",
+                                                width=200,
+                                                height=25,
+                                                border_width=2,
+                                                corner_radius=10)
+        self.txtb_lang.grid(row=4, column=1, padx=(0, 0), pady=(5, 0), sticky="nw", columnspan=1)
+
+        self.txtb_group = customtkinter.CTkComboBox(master=self.five_frame, values=UserGroup().get_all_groups(),
+                                                    width=200)
+        self.txtb_group.grid(row=4, column=3, padx=(0, 0), pady=(0, 0), sticky="nw", columnspan=1)
+        """self.txtb_group = customtkinter.CTkEntry(master=self.five_frame,
+                                                 placeholder_text="Wähle einen User",
+                                                 width=200,
+                                                 height=25,
+                                                 border_width=2,
+                                                 corner_radius=10)
+        self.txtb_group.grid(row=4, column=3, padx=(0, 0), pady=(5, 0), sticky="nw", columnspan=1)"""
+
+        ## Buttons
+        self.five_frame_button_del = customtkinter.CTkButton(self.five_frame, corner_radius=10, height=40,
+                                                             border_spacing=10, text="Benutzer löschen",
+                                                             fg_color="#E64422", text_color=("gray10", "gray90"),
+                                                             hover_color=("#E64422", "#E56D54"),
+                                                             anchor="w",
+                                                             state="disabled",
+                                                             command=lambda: self.del_user(u.get_all_users()))
+        self.five_frame_button_del.grid(row=8, column=3, sticky="nw", padx=(10, 0), columnspan=2)
+
+        self.five_frame_button_edit = customtkinter.CTkButton(self.five_frame, corner_radius=10, height=40,
+                                                              border_spacing=10, text="Benutzer bearbeiten",
+                                                              fg_color="#69AF3F", text_color=("gray10", "gray90"),
+                                                              hover_color=("#69AF3F", "#8BE554"),
+                                                              anchor="w",
+                                                              command=self.edit_user, state="disabled")
+        self.five_frame_button_edit.grid(row=8, column=0, sticky="ne", columnspan=2)
+
+        ## Labels
+        self.five_frame.second_label = customtkinter.CTkLabel(self.five_frame, text="Wähle User:")
+        self.five_frame.second_label.grid(row=1, column=0, padx=(20, 0), pady=(0, 0), sticky="nw")
+        self.five_frame.lbl_ID = customtkinter.CTkLabel(self.five_frame, text="ID:")
+        self.five_frame.lbl_ID.grid(row=2, column=0, padx=(20, 0), pady=(0, 0), sticky="nw")
+        self.five_frame.lbl_Name = customtkinter.CTkLabel(self.five_frame, text="Name:")
+        self.five_frame.lbl_Name.grid(row=2, column=2, padx=(20, 0), pady=(0, 0), sticky="nw")
+        self.five_frame.lbl_ChatID = customtkinter.CTkLabel(self.five_frame, text="ChatID:")
+        self.five_frame.lbl_ChatID.grid(row=3, column=0, padx=(20, 0), pady=(0, 0), sticky="nw")
+        self.five_frame.lbl_UID = customtkinter.CTkLabel(self.five_frame, text="UID:")
+        self.five_frame.lbl_UID.grid(row=3, column=2, padx=(20, 0), pady=(0, 0), sticky="nw")
+        self.five_frame.lbl_lang = customtkinter.CTkLabel(self.five_frame, text="Sprache:")
+        self.five_frame.lbl_lang.grid(row=4, column=0, padx=(20, 0), pady=(0, 0), sticky="nw")
+        self.five_frame.lbl_group = customtkinter.CTkLabel(self.five_frame, text="Gruppe:")
+        self.five_frame.lbl_group.grid(row=4, column=2, padx=(20, 0), pady=(0, 0), sticky="nw")
+        self.five_frame.lbl_warnings = customtkinter.CTkLabel(self.five_frame, text="Wartungsarten:")
+        self.five_frame.lbl_warnings.grid(row=5, column=0, padx=(20, 0), pady=(0, 0), sticky="nw")
+
+        """
+            Gruppen Frame
+        """
+        self.six_frame = customtkinter.CTkFrame(self, corner_radius=0, fg_color="transparent")
+        self.six_frame.grid(row=4, column=0, padx=20, pady=10)
+
+        self.six_frame.grid_columnconfigure(1, weight=1)
+        self.six_frame.grid_columnconfigure((0, 1), weight=0)
+        self.six_frame.grid_rowconfigure((7, 8), weight=0)
+
+        ## LOGO
+        self.six_frame.label = customtkinter.CTkLabel(master=self.six_frame, text="Gruppenverwaltung",
+                                                      font=("Arial", 30),
+                                                      text_color="#4a97cf")
+        self.six_frame.label.grid(row=0, column=0, padx=20, pady=(20, 20), columnspan=6, sticky="nesw")
+
+        ## Select User
+        self.gr_combobox_groups = customtkinter.CTkComboBox(master=self.six_frame, values=[],
+                                                        command=self.combobox_callback_userGroup, width=600)
+        self.gr_combobox_groups.grid(row=1, column=1, padx=(0, 0), pady=(0, 0), sticky="nw", columnspan=1)
+
+        ## Textboxen usw
+        self.gr_txtb_id = customtkinter.CTkEntry(master=self.six_frame,
+                                                 placeholder_text="Wähle eine Gruppe",
+                                                 width=200,
+                                                 height=25,
+                                                 border_width=2,
+                                                 corner_radius=10)
+        self.gr_txtb_id.grid(row=2, column=1, padx=(0, 0), pady=(5, 0), sticky="nw", columnspan=1)
+
+        self.gr_txtb_nr = customtkinter.CTkEntry(master=self.six_frame,
+                                                 placeholder_text="Wähle eine Gruppe",
+                                                 width=200,
+                                                 height=25,
+                                                 border_width=2,
+                                                 corner_radius=10)
+        self.gr_txtb_nr.grid(row=3, column=1, padx=(0, 0), pady=(5, 0), sticky="nw", columnspan=1)
+
+        self.gr_txtb_descr = customtkinter.CTkEntry(master=self.six_frame,
+                                                   placeholder_text="Wähle eine Gruppe",
+                                                   width=500,
+                                                   height=25,
+                                                   border_width=2,
+                                                   corner_radius=10)
+        self.gr_txtb_descr.grid(row=4, column=1, padx=(0, 0), pady=(5, 0), sticky="nw", columnspan=3)
+
+        self.gr_textbox_users = customtkinter.CTkTextbox(self.six_frame, width=200, state='disabled', border_width=2)
+        self.gr_textbox_users.grid(row=5, column=1, padx=(0, 0), pady=(5, 10), sticky="nsew", columnspan=2)
+
+        ## Buttons
+        self.six_frame_button_del = customtkinter.CTkButton(self.six_frame, corner_radius=10, height=40,
+                                                            border_spacing=10, text="Gruppe löschen",
+                                                            fg_color="#E64422", text_color=("gray10", "gray90"),
+                                                            hover_color=("#E64422", "#E56D54"),
+                                                            anchor="w",
+                                                            state="disabled",
+                                                            command=lambda: self.del_group(self.gr_txtb_nr.get()))
+        self.six_frame_button_del.grid(row=7, column=1, sticky="ne", padx=(0, 0), columnspan=1)
+
+        self.six_frame_button_edit = customtkinter.CTkButton(self.six_frame, corner_radius=10, height=40,
+                                                             border_spacing=10, text="Speichern",
+                                                             fg_color="#69AF3F", text_color=("gray10", "gray90"),
+                                                             hover_color=("#69AF3F", "#8BE554"),
+                                                             anchor="w",
+                                                             command=lambda: self.save_group(self.gr_txtb_nr.get(),
+                                                                                             self.gr_txtb_descr.get()),
+                                                             state="disabled")
+        self.six_frame_button_edit.grid(row=7, column=2, padx=(10, 0), sticky="nw", columnspan=1)
+
+        self.six_frame_button_new = customtkinter.CTkButton(self.six_frame, corner_radius=10, height=40,
+                                                             border_spacing=10, text="(+) Neue Gruppe",
+                                                             fg_color="#69AF3F", text_color=("gray10", "gray90"),
+                                                             hover_color=("#69AF3F", "#8BE554"),
+                                                             anchor="w",
+                                                             command=lambda: self.new_group(self.txtb_group.get(), self.gr_txtb_descr.get()),
+                                                             state="normal")
+        self.six_frame_button_new.grid(row=0, column=2, padx=(0, 0), sticky="ne", columnspan=1)
+
+        ## Labels
+        self.six_frame.second_label = customtkinter.CTkLabel(self.six_frame, text="Wähle Gruppe:")
+        self.six_frame.second_label.grid(row=1, column=0, padx=(20, 0), pady=(0, 0), sticky="nw")
+        self.six_frame.lbl_ID = customtkinter.CTkLabel(self.six_frame, text="ID:")
+        self.six_frame.lbl_ID.grid(row=2, column=0, padx=(20, 0), pady=(0, 0), sticky="nw")
+        self.six_frame.lbl_gruppennr = customtkinter.CTkLabel(self.six_frame, text="Gruppennr:")
+        self.six_frame.lbl_gruppennr.grid(row=3, column=0, padx=(20, 0), pady=(0, 0), sticky="nw")
+        self.six_frame.lbl_Beschreibung = customtkinter.CTkLabel(self.six_frame, text="Beschreibung:")
+        self.six_frame.lbl_Beschreibung.grid(row=4, column=0, padx=(20, 0), pady=(0, 0), sticky="nw")
+        self.six_frame.lbl_users = customtkinter.CTkLabel(self.six_frame, text="User in Gruppe:")
+        self.six_frame.lbl_users.grid(row=5, column=0, padx=(20, 0), pady=(0, 0), sticky="nw")
+        """
+            Default
+        """
         # select default frame
         self.select_frame_by_name("home")
+
+        # initiale Funktionen die ausgeführt werden sollen
+        self.get_dbInfo()
 
         # self.four_frame.grid_columnconfigure(1, weight=1)
         # self.four_frame.grid_columnconfigure((2, 3), weight=0)
@@ -287,6 +510,8 @@ class App(customtkinter.CTk):
         self.frame_2_button.configure(fg_color=("gray75", "gray25") if name == "frame_2" else "transparent")
         self.frame_3_button.configure(fg_color=("gray75", "gray25") if name == "frame_3" else "transparent")
         self.frame_4_button.configure(fg_color=("gray75", "gray25") if name == "frame_4" else "transparent")
+        self.frame_5_button.configure(fg_color=("gray75", "gray25") if name == "frame_5" else "transparent")
+        self.frame_6_button.configure(fg_color=("gray75", "gray25") if name == "frame_6" else "transparent")
 
         # show selected frame
         if name == "home":
@@ -309,6 +534,16 @@ class App(customtkinter.CTk):
         else:
             self.four_frame.grid_forget()
 
+        if name == "frame_5":
+            self.five_frame.grid(row=0, column=1, sticky="nsew")
+        else:
+            self.five_frame.grid_forget()
+
+        if name == "frame_6":
+            self.six_frame.grid(row=0, column=1, sticky="nsew")
+        else:
+            self.six_frame.grid_forget()
+
     def home_button_event(self):
         self.get_dbInfo()
         self.select_frame_by_name("home")
@@ -321,6 +556,23 @@ class App(customtkinter.CTk):
 
     def frame_4_button_event(self):
         self.select_frame_by_name("frame_4")
+
+    def frame_5_button_event(self):
+        u = Users(0)
+        print(len(u.get_all_users()))
+        self.combobox_users.configure(values=u.get_all_users())
+
+        self.select_frame_by_name("frame_5")
+
+    def frame_6_button_event(self):
+        """
+        Frame für die UserGruppen
+        :return:
+        """
+        ug = UserGroup()
+        self.gr_combobox_groups.configure(values=ug.get_all_groups())
+        self.gr_combobox_groups.set(ug.get_all_groups()[0])
+        self.select_frame_by_name("frame_6")
 
     # def change_appearance_mode_event(self, new_appearance_mode):
     #    customtkinter.set_appearance_mode(new_appearance_mode)
@@ -340,7 +592,184 @@ class App(customtkinter.CTk):
         for i in res_values:
             print(i)
 
-        # return results
+        # return result
+
+    def combobox_callback_userGroup(self, choice):
+        if choice == "n/A":
+            return None
+
+        ## Setze alles auf Leer beim wechsel
+        self.gr_txtb_id.configure(state="normal")
+        self.gr_textbox_users.configure(state="normal")
+
+        self.gr_txtb_nr.delete(0, customtkinter.END)
+        self.gr_txtb_descr.delete(0, customtkinter.END)
+        self.gr_textbox_users.delete("0.0", customtkinter.END)
+        self.gr_txtb_id.delete(0, customtkinter.END)
+
+        ## Daten aus der DB einlesen
+        substring = choice.split(":", 1)[0]
+        results = Database.get_query("user_groups", "ID=" + str(substring))
+        result = results[0]
+
+        gr_users = Database.get_query("users", "group_id={}".format(substring))
+        print(gr_users)
+        if len(gr_users) > 0:
+            str_gr_users = ""
+            for e in gr_users:
+                str_gr_users = str_gr_users + str(e[0]) + "\t\t" + str(e[1]) + "\t\t" + str(e[2]) + "\t\t" + str(e[3]) + "\t\t" + str(e[4]) + "\t\t" + str(e[5]) + "\n"
+        else:
+            str_gr_users = "\nKeine User in dieser Gruppe vorhanden..."
+            #print("dddd" + str(gr_users))
+
+        ## Daten einfügen
+        self.gr_txtb_nr.insert(0, str(result[1]))
+        self.gr_txtb_descr.insert(0, str(result[2]))
+        self.gr_textbox_users.insert("0.0", "ID\t\tUID\t\tName\t\tSprache\t\twarnings\t\tChatID" + "\n" +
+                                     "---------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n"+ str_gr_users)
+        #self.gr_textbox_users.insert(0, "UID\tName\tChatID")
+        self.gr_txtb_id.insert(0, str(result[0]))
+
+        self.gr_txtb_id.configure(state="disabled")
+        self.gr_textbox_users.configure(state="disabled")
+
+    def save_group(self, gnr, descr):
+        ug = UserGroup()
+        ug.edit_group(gnr, descr)
+
+    def del_group(self, gid):
+        ug = UserGroup()
+        ug.del_group(gid)
+    def new_group(self, gnr, descr):
+        ug = UserGroup()
+        self.gr_txtb_id.configure(state="normal")
+        self.gr_txtb_id.delete(0, customtkinter.END)
+        self.gr_txtb_id.insert(0, "Wird automatisch vergeben...")
+        self.gr_txtb_id.configure(state="disabled")
+        self.gr_combobox_groups.configure(state="disabled")
+        self.gr_textbox_users.configure(state="normal")
+        self.gr_textbox_users.delete("0.0", customtkinter.END)
+        self.gr_txtb_nr.delete(0, customtkinter.END)
+        self.gr_txtb_descr.delete(0, customtkinter.END)
+        self.gr_textbox_users.configure(state="disabled")
+        self.six_frame_button_edit.configure(state="normal", text="Speichern", command=self.transmit_group)
+        self.six_frame_button_del.configure(state="normal", text="Abbrechen", command=self.new_group_cancel)
+        self.six_frame_button_new.grid_forget()
+
+    def transmit_group(self):
+        print("bin da")
+        ug = UserGroup()
+        feedback = ug.create_group(self.gr_txtb_nr.get(), self.gr_txtb_descr.get())
+        print(feedback)
+        # Setze alles zum ursprung
+        if feedback:
+            messagebox.showinfo("Erfolgreich!", "Gruppe wurde erfolgreich angelegt!")
+            self.new_group_cancel()
+            self.frame_6_button_event()
+        else:
+            messagebox.showerror("Fehler", "GruppenNr ist bereits in verwendung! Bitte andere wählen.")
+    def new_group_cancel(self):
+        self.gr_txtb_nr.delete(0, customtkinter.END)
+        self.gr_txtb_descr.delete(0, customtkinter.END)
+        self.gr_textbox_users.delete(0, customtkinter.END)
+        self.gr_txtb_id.delete(0, customtkinter.END)
+
+        self.six_frame_button_new.grid(row=0, column=2, padx=(0, 0), sticky="ne", columnspan=1)
+        self.six_frame_button_edit.configure(state="disabled", text="Speichern")
+        self.six_frame_button_del.configure(state="disabled", text="Gruppe löschen", command=lambda: self.del_group(self.gr_txtb_nr.get()))
+        self.gr_txtb_id.configure(state="normal")
+        self.gr_combobox_groups.configure(state="normal")
+        self.gr_txtb_id.delete(0, customtkinter.END)
+        self.gr_txtb_id.configure(placeholder_text="Wähle eine Gruppe")
+    def del_user(self, data):
+        u = Users(self.txtb_UID.get())
+        u.del_user(self.txtb_id.get())
+        self.combobox_users.set(data[0])
+        self.combobox_callback_users(self.combobox_users.get())
+
+    def edit_user(self):
+        uid = self.txtb_UID.get()
+        state = self.five_frame_button_edit.cget("text")
+
+        u = Users(uid)
+
+        if (state == "Benutzer bearbeiten"):
+            print(uid)
+            ## Buttons ändern
+            self.five_frame_button_edit.configure(text="Speichern")
+            self.five_frame_button_del.configure(state="disabled", fg_color="gray30")
+
+            ## Sperre der Felder entfernen
+            self.combobox_users.configure(state="disabled")
+            self.txtb_Name.configure(state="normal")
+            self.txtb_lang.configure(state="normal")
+            self.txtb_group.configure(state="normal")
+
+        else:
+            ## Setze alles auf disable
+            self.combobox_users.configure(state="normal")
+            self.txtb_Name.configure(state="disabled")
+            self.txtb_lang.configure(state="disabled")
+            self.txtb_group.configure(state="disabled")
+
+            ## Aktionen
+            data = [None] * 6
+            data[0] = int(self.txtb_id.get())
+            data[1] = self.txtb_Name.get()
+            data[2] = self.txtb_lang.get()
+            data[3] = None  # self.txtb_warnings.get()
+            substring_gnr = self.txtb_group.get().split(":", 1)[0]
+            data[4] = substring_gnr
+
+            u.edit_user(data)
+
+            ## Buttons ändern
+            self.five_frame_button_edit.configure(text="Benutzer bearbeiten")
+            self.five_frame_button_del.configure(state="normal", fg_color="#E64422")
+
+            ## reload
+            self.combobox_callback_users(self.combobox_users.get())
+
+    def combobox_callback_users(self, choice):
+        ## Setze alles auf enable
+        self.txtb_id.configure(state="normal")
+        self.txtb_Name.configure(state="normal")
+        self.txtb_ChatID.configure(state="normal")
+        self.txtb_UID.configure(state="normal")
+        self.txtb_lang.configure(state="normal")
+        self.txtb_group.configure(state="normal")
+        self.five_frame_button_del.configure(state="normal")
+        self.five_frame_button_edit.configure(state="normal")
+
+        self.txtb_id.delete(0, customtkinter.END)
+        self.txtb_Name.delete(0, customtkinter.END)
+        self.txtb_ChatID.delete(0, customtkinter.END)
+        self.txtb_UID.delete(0, customtkinter.END)
+        self.txtb_lang.delete(0, customtkinter.END)
+        #self.txtb_group.delete(0, customtkinter.END)
+
+        ## Daten aus der DB einlesen
+        substring = choice.split(":", 1)[0]
+        results = Database.get_query("users", "ID=" + str(substring))
+        result = results[0]
+
+        ## Daten einfügen
+        self.txtb_id.insert(0, str(result[0]))
+        self.txtb_Name.insert(0, str(result[2]))
+        self.txtb_ChatID.insert(0, str(result[5]))
+        self.txtb_UID.insert(0, str(result[1]))
+        self.txtb_lang.insert(0, str(result[3]))
+        self.txtb_group.set(str(result[6]))
+
+        ## Setze alles auf disable
+        self.txtb_id.configure(state="disabled")
+        self.txtb_Name.configure(state="disabled")
+        self.txtb_ChatID.configure(state="disabled")
+        self.txtb_UID.configure(state="disabled")
+        self.txtb_lang.configure(state="disabled")
+        self.txtb_group.configure(state="disabled")
+
+        # print(results)
 
     def combobox_callback(self, choice):
         """
@@ -372,6 +801,8 @@ class App(customtkinter.CTk):
 
         self.second_codeiiimg.configure(light_image=self.pull_img_url(str(val[0][12])),
                                         dark_image=self.pull_img_url(str(val[0][12])))
+
+        self.second_codeImglabel.configure(text="Event: " + val[0][14])
 
     def pull_img_url(self, url):
         if url == 'None':
@@ -463,11 +894,22 @@ class App(customtkinter.CTk):
         c = conn.cursor()
 
         c.execute("SELECT COUNT(*) FROM warnings")
-        count = c.fetchone()[0]
+        warnings = c.fetchone()[0]
+        c.execute("SELECT COUNT(Distinct(wid)) FROM warnings")
+        warnings2 = c.fetchone()[0]
+        c.execute("SELECT COUNT(Distinct(wid)) FROM warnings WHERE wid like '%custom%'")
+        warnings3 = c.fetchone()[0]
+        c.execute("SELECT COUNT(*) FROM warnings")
+        warnings = c.fetchone()[0]
         c.execute("SELECT COUNT(*) FROM users")
         count2 = c.fetchone()[0]
-        print("Anzahl User: " + str(count2) + "\nAnzahl Warnings: " + str(count))
-        self.home_label_dbInfo.configure(text="Anzahl User: " + str(count2) + "\nAnzahl Warnings: " + str(count))
+        c.execute("SELECT COUNT(*) FROM user_groups")
+        count3 = c.fetchone()[0]
+        self.home_label_dbInfo.configure(text="STATISTIK\n \nAnzahl User:\t" + str(count2) + "\n\nAnzahl Warnings:\t" + str(warnings) +
+                                              "\n      Unique:\t" + str(warnings2) +
+                                              "\n      Updates:\t" + str(warnings-warnings2) +
+                                              "\n      Custom:\t" + str(warnings3) +
+                                              "\n\nAnzahl Gruppen:\t" + str(count3))
 
         # threading.Timer(10, self.get_dbInfo).start()
         # self.home_label = customtkinter.CTkLabel(self.home_frame, anchor="ne", justify="left", text="Anzahl User: " + str(count2) + "\nAnzahl Warnings: " + str(count))
