@@ -463,6 +463,12 @@ class App(customtkinter.CTk):
                                                             command=self.save_new_warning,
                                                             text="Absenden")
         self.third_frame_btn_save.grid(row=13, column=3, padx=(20, 20), pady=(20, 20), sticky="se")
+        self.third_frame_btn_save = customtkinter.CTkButton(master=self.third_frame, fg_color="transparent",
+                                                            border_width=2,
+                                                            text_color=("gray10", "#DCE4EE"),
+                                                            command=lambda: self.save_new_warning(True),
+                                                            text="Deaktivieren")
+        self.third_frame_btn_save.grid(row=13, column=2, padx=(20, 0), pady=(20, 20), sticky="se")
 
         """
             Not USED
@@ -999,6 +1005,7 @@ class App(customtkinter.CTk):
         # print("combobox dropdown clicked:", choice)
         # print(val)
         self.second_desc.delete("0.0", customtkinter.END)
+        self.second_title.delete(0, customtkinter.END)
         self.second_desc.insert("0.0", val[0][9])
         self.second_title.insert(0, val[0][8])
         if val[0][7] == "":
@@ -1077,7 +1084,7 @@ class App(customtkinter.CTk):
         self.third_frame_Status.delete(0, customtkinter.END)
         self.third_frame_area.delete(0, customtkinter.END)
 
-    def save_new_warning(self, delete=None):
+    def save_new_warning(self, cancel_wid=None):
         status = self.third_frame_ID.cget(
             "state")  # Rufe den Status ab von WID. Wenn disabled, dann updaten und sonst neu erstellen
         # Rufe alle Variablen ab
@@ -1100,9 +1107,25 @@ class App(customtkinter.CTk):
         var_version = self.third_frame_tmpVar.cget("text")
         var_currentDateTime = str(datetime.datetime.now())[0:19]
 
-        if delete:
+        if cancel_wid:
+            query = "UPDATE warnings SET type = 'Cancel', version={}, last_update='{}' WHERE wid='{}'".format(int(var_version) + 1,var_currentDateTime, var_wid)
+            Database.execute_db(query, "warn.db")
+
+            query = "INSERT INTO warning_information (wid,version,sender,status,msgType,scope,senderName,headline," \
+                    "text,web,areaDesc,codeIMG,image,event,urgency,severity,certainty,DateEffective,DateOnset," \
+                    "DateExpires,instruction) VALUES(" \
+                    "'{}',{},'{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}'," \
+                    "'{}','{}')".format(var_wid, int(var_version) + 1, "Custom", var_status, "Cancel", "Public", var_sender, var_title,
+                                        var_descr, var_web, var_area, var_imgc, var_img, var_event, var_urgancy,
+                                        var_severity, var_certainty, var_effective, var_currentDateTime, var_expires,
+                                        var_instruction)
+            Database.execute_db(query, "warn.db")
+
             messagebox.showwarning("STATUS: Cancel", "Warnmeldung wurde aufgehoben!")
-            
+            self.clear_frame_3()
+            simulate_choice = str(var_currentDateTime)+": " + var_title + " (" + var_wid + ")"
+            self.combobox_callback_warnings(simulate_choice, int(var_version) + 1)
+            self.frame_2_button_event()
         elif status == "normal":
 
             messagebox.showwarning("STATUS: NORMAL", "Feld ist normal " + str(datetime.datetime.now())[0:19])

@@ -49,6 +49,7 @@ class TelegramBot:
         if not result_json['ok']:
             raise Exception('Error sending message')
     """
+
     def send_multiple_message(self, text, where=None):
         db = Database()
         userlist = db.get_query("users", where)
@@ -97,23 +98,21 @@ class TelegramBot:
         else:
             self.logger.error("Failed to send message to chat %s: %s", chat_id, response.text)
 
-
     def send_warnings(self):
         db = Database()
         list_of_users = db.get_users("name like 'marco'")
 
         print(list_of_users)
 
-
     def analyse_message(self, user_name, chat_id, text):
         if text == "/start":
             arr_start = ["Hallo <b>" + user_name + "</b>!\n" \
-                                             "Der PEASEC Warnbot ist ein Krisenmanagement-Tool für öffentliche Warnungen " \
-                                                "über Telegram-Nachrichten. Dieser Bot sendet automatische Hochwasserwarnungen, " \
-                                                "Unwetterwarnungen, Polizeimeldungen, Mowas, Biwapp und Katwarn Meldungen in Echtzeit über den öffentlichen " \
-                                                "Telegram-Nachrichtenkanal an Sie. Mit diesem Warn-Bot erhalten Sie " \
-                                                "automatische Benachrichtigungen über öffentliche Notfälle in Deutschland.\n " \
-                                                "Mit <b>/help</b> werden alle Funktionen aufgelistet.",
+                                                   "Der PEASEC Warnbot ist ein Krisenmanagement-Tool für öffentliche Warnungen " \
+                                                   "über Telegram-Nachrichten. Dieser Bot sendet automatische Hochwasserwarnungen, " \
+                                                   "Unwetterwarnungen, Polizeimeldungen, Mowas, Biwapp und Katwarn Meldungen in Echtzeit über den öffentlichen " \
+                                                   "Telegram-Nachrichtenkanal an Sie. Mit diesem Warn-Bot erhalten Sie " \
+                                                   "automatische Benachrichtigungen über öffentliche Notfälle in Deutschland.\n " \
+                                                   "Mit <b>/help</b> werden alle Funktionen aufgelistet.",
                          "In den Nächsten Schritten erfolgt die Konfiguration des Bots."]
             return arr_start
         elif text == "/lang":
@@ -136,7 +135,8 @@ class TelegramBot:
                    "/Quelle (Gibt die Quelle der Warnungen aus)\n" \
                    "bald noch mehr...!"
         elif text == "/count_users":
-            return "&#10069; Aktuell sind mir " + str(Database.count_rows("users")) + " aktive Nutzer bekannt. \nHoffentlich wachsen wir noch als Community!!"
+            return "&#10069; Aktuell sind mir " + str(
+                Database.count_rows("users")) + " aktive Nutzer bekannt. \nHoffentlich wachsen wir noch als Community!!"
         elif text == "/Notfalltipps":
             return "https://nina.api.proxy.bund.dev/api31/appdata/gsb/notfalltipps/DE/notfalltipps.json"
         elif text == "/Quelle":
@@ -213,7 +213,7 @@ class TelegramBot:
             self.logger.info("Received message from user %s in chat %s: %s", user_id, chat_id, text)
             msg = self.analyse_message(fname, chat_id, text)
             # TODO: Delete DEV Abfrage
-            #if (chat_id == 784506299):
+            # if (chat_id == 784506299):
             if isinstance(msg, list):
                 for m in msg:
                     self.ui.insert_send_msg("[{} to {}] {}".format(current_time, chat_id, m))
