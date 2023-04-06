@@ -78,6 +78,7 @@ class Database:
         cursor.execute(sql)
         connection.commit()
         connection.close()
+        return True
 
     @staticmethod
     def insert_multiple(sql, db):
