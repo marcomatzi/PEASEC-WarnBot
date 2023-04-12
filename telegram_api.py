@@ -126,12 +126,16 @@ class TelegramBot:
         now = datetime.now()
         current_time = now.strftime("%d-%m-%Y %H:%M:%S")
 
+        """
+        NOT USED:
+        
         keyboard = {
             "inline_keyboard": [
                 [{"text": "Help", "callback_data": "button1"}],
                 [{"text": "count_users", "callback_data": "button2"}],
             ]
-        }
+        }"""
+
         keyboard_json = json.dumps(quickreply)
         text = self.message_replace(text)
         if quickreply != None:
@@ -221,10 +225,19 @@ class TelegramBot:
         warnmeldung_txt = self.message_replace(warnmeldung_txt)
 
         if len(warnmeldung_txt) <= 1025:                    # 1025 Chars ist die maximale Anzahl für die Caption eines Fotos.
-            if result[13] == "" or result[13] == "None":
-                self.send_photo(chatid, "https://cdn.icon-icons.com/icons2/1808/PNG/512/warning_115257.png", warnmeldung_txt, "HTML")
+            if result[10] != "":
+                reply_markup = {
+                    "inline_keyboard": [
+                        [{"text": "%s" % str(result[7]), "url": "%s" % str(result[10]) }]
+                    ]
+                }
             else:
-                self.send_photo(chatid, result[13], warnmeldung_txt, "HTML")
+                reply_markup = None
+
+            if result[13] == "" or result[13] == "None":
+                self.send_photo(chatid, "https://cdn.icon-icons.com/icons2/1808/PNG/512/warning_115257.png", warnmeldung_txt, "HTML", reply_markup)
+            else:
+                self.send_photo(chatid, result[13], warnmeldung_txt, "HTML", reply_markup)
 
         else:
             warn_msg = self.split_text(warnmeldung_txt)
@@ -232,26 +245,27 @@ class TelegramBot:
 
             i = 0
             for m in warn_msg:
-                print(str(i))
-                if i == 0:
-                    if result[13] == "" or result[13] == "None":
-                        self.send_photo(chatid, "https://cdn.icon-icons.com/icons2/1808/PNG/512/warning_115257.png", m)
-                    else:
-                        print(str(i)+": " + str(result[13]))
-                        print(m)
-                        self.send_photo(chatid, result[13], m)
+                if result[10] != "":
+                    reply_markup = {
+                        "inline_keyboard": [
+                            [{"text": "%s" % str(result[7]), "url": "%s" % str(result[10]) }]
+                        ]
+                    }
+                else:
+                    reply_markup = None
 
-                    #time.sleep(1)
-                elif i == len(warn_msg)-1:                  # Letzte Nachricht enthält eine Schnellantwort mit der URL
-                    if result[10] != "":
-                        reply_markup = {
-                            "inline_keyboard": [
-                                [{"text": "Webseite Herausgeber", "url": "%s" % result[10]}]
-                            ]
-                        }
-                        self.send_message(chatid, m, reply_markup)
+                if i == 0:
+                    print("Only img with %s" % reply_markup)
+                    if i != len(warn_msg)-1:
+                        reply_markup = None
+
+                    if result[13] == "" or result[13] == "None":
+                        self.send_photo(chatid, "https://cdn.icon-icons.com/icons2/1808/PNG/512/warning_115257.png", m, "HTML", reply_markup)
                     else:
-                        self.send_message(chatid, m)
+                        self.send_photo(chatid, result[13], m, "HTML", reply_markup)
+
+                elif i == len(warn_msg)-1:                  # Letzte Nachricht enthält eine Schnellantwort mit der URL
+                    self.send_message(chatid, m, reply_markup)
                 else:
                     self.send_message(chatid, m)
                 i += 1
