@@ -5,7 +5,7 @@ import json
 from db_functions import Database
 from users import Users
 from datetime import datetime
-
+import time
 
 class TelegramBot:
     def __init__(self, token, app):
@@ -105,7 +105,7 @@ class TelegramBot:
             "photo": photo_url,
             "disable_notification": disable_notification,
         }
-        if caption and len(caption) < 1020:
+        if caption and len(caption) < 1026:
             params["caption"] = caption
         if parse_mode:
             params["parse_mode"] = parse_mode
@@ -118,6 +118,7 @@ class TelegramBot:
 
     def message_replace(self, msg):
         msg = msg.replace("<br/>", "\n")
+        msg = msg.replace("<br>", "\n")
 
         return msg
 
@@ -131,7 +132,7 @@ class TelegramBot:
                 [{"text": "count_users", "callback_data": "button2"}],
             ]
         }
-        keyboard_json = json.dumps(keyboard)
+        keyboard_json = json.dumps(quickreply)
         text = self.message_replace(text)
         if quickreply != None:
             params = {
@@ -159,13 +160,22 @@ class TelegramBot:
         :return:
         """
         chunks = []
-        while len(text) > 4000:
+
+        split_index = text.rfind(" ", 0, 1025)
+        chunks.append(text[:split_index])
+        text = text[split_index + 1:]
+
+        while len(text) > 1025:
             split_index = text.rfind(" ", 0, 4000)
             chunks.append(text[:split_index])
             text = text[split_index + 1:]
+
         chunks.append(text)
+
+        print(chunks)
         return chunks
-    def send_warnings(self, wid, version=None, chatid=None, anrede=None):
+
+    def send_warnings(self, wid, version=None, chatid=None, username=None):
         """
         TODO: Sendet warnungen raus -> (1) Bild (2) Text (3) Verhalten (4) weitere Infos und Button mit Url
         Sendet die Warnmeldungen raus
@@ -176,7 +186,8 @@ class TelegramBot:
         if version is None or version == "":
             results = Database.get_query("warning_information", "wid='{}' GROUP BY version".format(wid))
         else:
-            results = Database.get_query("warning_information", "wid='{}' and version={} GROUP BY version".format(wid, version))
+            results = Database.get_query("warning_information",
+                                         "wid='{}' and version={} GROUP BY version".format(wid, version))
         highest_res = results[0]
 
         if len(results) < 2:
@@ -188,83 +199,62 @@ class TelegramBot:
                     highest_res = r
             result = highest_res
 
-        # versenden der Warnmeldung
-        if anrede is None:
+        # Username nutzen als persönliche Anrede
+        if username is None:
+            warnmeldung_txt = str(result[5]) + ": " + result[8] + "\n\n" + str(
+                result[9]) + "\n\n" + "<b>Anweisung:</b> " + str(result[21]) + "<b>Herausgeber:</b> " + str(
+                result[7]) + "  (" + str(result[10]) + ")" + "\n" + "<b>Dringlichkeit:</b> " + str(
+                result[15]) + "\n" + "<b>Schweregrad:</b> " + str(
+                result[16]) + "\n" + "<b>Wahrscheinlichkeit:</b> " + str(
+                result[17]) + "\n\n" + "<b>Seit dem:</b> " + str(result[18]) + "\n" + "<b>Bis zum:</b> " + str(
+                result[20]) + "\n\n" + "<b>Diese Warnmeldung gilt für :</b> " + str(result[11])
+        else:
+            warnmeldung_txt = "Hallo " + str(username) + "! Es gibt eine neue Warnmeldung -> \n" + str(result[5]) + ": " + result[8] + "\n\n" + str(
+                result[9]) + "\n\n" + "<b>Anweisung:</b> " + str(result[21]) + "<b>Herausgeber:</b> " + str(
+                result[7]) + "  (" + str(result[10]) + ")" + "\n" + "<b>Dringlichkeit:</b> " + str(
+                result[15]) + "\n" + "<b>Schweregrad:</b> " + str(
+                result[16]) + "\n" + "<b>Wahrscheinlichkeit:</b> " + str(
+                result[17]) + "\n\n" + "<b>Seit dem:</b> " + str(result[18]) + "\n" + "<b>Bis zum:</b> " + str(
+                result[20]) + "\n\n" + "<b>Diese Warnmeldung gilt für :</b> " + str(result[11])
 
-            warnmeldung_txt = str(result[5]) + ": " + result[8] + "\n\n" + str(result[9]) + "\n\n" + "<b>Anweisung:</b> " + str(result[21]) + "<b>Herausgeber:</b> " + str(result[7]) + "  (" + str(result[10]) + ")" + "\n" +"<b>Dringlichkeit:</b> " + str(result[15]) + "\n" +"<b>Schweregrad:</b> " + str(result[16]) + "\n" +"<b>Wahrscheinlichkeit:</b> " + str(result[17]) + "\n\n" + "<b>Seit dem:</b> " + str(result[18]) + "\n" +"<b>Bis zum:</b> " + str(result[20]) + "\n\n" +"<b>Diese Warnmeldung gilt für :</b> " + str(result[11])
+        # Warntext wird auf länge geprüft und ggf. aufgeteilt
+        warnmeldung_txt = self.message_replace(warnmeldung_txt)
 
-            # +"<b>Diese Warnmeldung gilt für :</b> " + str(result[11]) + "\n"
-
-            # Senden an chatid
+        if len(warnmeldung_txt) <= 1025:                    # 1025 Chars ist die maximale Anzahl für die Caption eines Fotos.
             if result[13] == "" or result[13] == "None":
-                if len(warnmeldung_txt) < 1020:
-                    self.send_photo(chatid, "https://cdn.icon-icons.com/icons2/1808/PNG/512/warning_115257.png",
-                                    str(result[5]) + ": " + result[8])
+                self.send_photo(chatid, "https://cdn.icon-icons.com/icons2/1808/PNG/512/warning_115257.png", warnmeldung_txt, "HTML")
             else:
-                self.send_photo(chatid, result[13], str(result[5]) + ": " + result[8])
-
-            """if len(result[9]) < 4000:
-                print("<4000")
-                self.send_message(chatid, str(result[9]))
-            else:
-                print(">4000")
-                i = 0
-                while i <= len(result[9]):
-                    self.send_message(chatid, str(result[9][i:i + 4000]))
-                    i += 4001"""
-            warnmeldung = ""
-            self.split_text(warnmeldung)
-
-
-            self.send_message(chatid, "<b>Anweisung:</b> " + str(result[21]))
-            self.send_message(chatid,
-                              "<b>Herausgeber:</b> " + str(result[7]) + "  (" + str(result[10]) + ")" + "\n" +
-                              "<b>Dringlichkeit:</b> " + str(result[15]) + "\n" +
-                              "<b>Schweregrad:</b> " + str(result[16]) + "\n" +
-                              "<b>Wahrscheinlichkeit:</b> " + str(result[17]) + "\n\n" +
-                              #"<b>Diese Warnmeldung gilt für :</b> " + str(result[11]) + "\n" +
-                              "<b>Seit dem:</b> " + str(result[18]) + "\n" +
-                              "<b>Bis zum:</b> " + str(result[20]) + "\n\n" +
-                              "<b>Diese Warnmeldung gilt für :</b> " + str(result[11]))
-
-            self.send_message(chatid, "<b>Diese Warnmeldung gilt für :</b> " + str(result[11]))
-                              #"<b>Seit dem:</b> " + str(result[18]) + "\n" +
-                              #"<b>Bis zum:</b> " + str(result[20]) + "\n")
+                self.send_photo(chatid, result[13], warnmeldung_txt, "HTML")
 
         else:
-            # Senden an chatid
-            if result[13] == "" or result[13] == "None":
-                self.send_photo(chatid, "https://cdn.icon-icons.com/icons2/1808/PNG/512/warning_115257.png",
-                                str(result[5]) + ": " + result[8])
-            else:
-                self.send_photo(chatid, result[13], str(result[5]) + ": " + result[8])
+            warn_msg = self.split_text(warnmeldung_txt)
+            print(len(warn_msg))
 
-            if len(result[9]) < 4000:
-                print("<4000")
-                self.send_message(chatid, str(result[9]))
-            else:
-                print(">4000")
-                i = 0
-                while i <= len(result[9]):
-                    self.send_message(chatid, str(result[9][i:i + 4000]))
-                    i += 4001
+            i = 0
+            for m in warn_msg:
+                print(str(i))
+                if i == 0:
+                    if result[13] == "" or result[13] == "None":
+                        self.send_photo(chatid, "https://cdn.icon-icons.com/icons2/1808/PNG/512/warning_115257.png", m)
+                    else:
+                        print(str(i)+": " + str(result[13]))
+                        print(m)
+                        self.send_photo(chatid, result[13], m)
 
-                    """if i > len(result[9]):
-                        i = len(result[9])"""
-
-            self.send_message(chatid, "<b>Anweisung:</b> " + str(result[21]))
-            self.send_message(chatid,
-                              "<b>Herausgeber:</b> " + str(result[7]) + "  (" + str(result[10]) + ")" + "\n" +
-                              "<b>Dringlichkeit:</b> " + str(result[15]) + "\n" +
-                              "<b>Schweregrad:</b> " + str(result[16]) + "\n" +
-                              "<b>Wahrscheinlichkeit:</b> " + str(result[17]) + "\n\n" +
-                              # "<b>Diese Warnmeldung gilt für :</b> " + str(result[11]) + "\n" +
-                              "<b>Seit dem:</b> " + str(result[18]) + "\n" +
-                              "<b>Bis zum:</b> " + str(result[20]) + "\n")
-
-            self.send_message(chatid, "<b>Diese Warnmeldung gilt für :</b> " + str(result[11]))
-            # "<b>Seit dem:</b> " + str(result[18]) + "\n" +
-            # "<b>Bis zum:</b> " + str(result[20]) + "\n")
+                    #time.sleep(1)
+                elif i == len(warn_msg)-1:                  # Letzte Nachricht enthält eine Schnellantwort mit der URL
+                    if result[10] != "":
+                        reply_markup = {
+                            "inline_keyboard": [
+                                [{"text": "Webseite Herausgeber", "url": "%s" % result[10]}]
+                            ]
+                        }
+                        self.send_message(chatid, m, reply_markup)
+                    else:
+                        self.send_message(chatid, m)
+                else:
+                    self.send_message(chatid, m)
+                i += 1
 
     def startSetup(self, chatid, username, phase, keyboard=None):
         """

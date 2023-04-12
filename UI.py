@@ -19,30 +19,39 @@ from user_group import UserGroup
 from db_functions import Database
 import telegram_api
 
+import ui_eval as uie  # Window Evaluierung
+
 customtkinter.set_appearance_mode("Light")  # Modes: "System" (standard), "Dark", "Light"
 customtkinter.set_default_color_theme("blue")  # Themes: "blue" (standard), "green", "dark-blue"
 var_info = "TEST"
 
-
-class ToplevelWindow(customtkinter.CTkToplevel):
+"""class ToplevelWindow(customtkinter.CTkToplevel):
     def __init__(self, app, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.app = app  # save reference to the App instance
         self.db = Database
         self.geometry("900x500")
-        self.title("Warnmeldungen bearbeiten - Bachelorthesis Marco Matissek")
-        self.label = customtkinter.CTkLabel(self, text="ToplevelWindow -> ")
-        self.label.pack(padx=20, pady=20)
+        self.title("Warnmeldungen Evaluieren - Bachelorthesis Marco Matissek")
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_columnconfigure((1, 2, 3), weight=0)
+        self.grid_rowconfigure((9, 10), weight=0)
+
+        # LOGO
+        self.headline = customtkinter.CTkLabel(master=self, text="Evaluation",
+                                               font=("Arial", 30),
+                                               text_color="#4a97cf")
+        self.headline.grid(row=0, column=0, padx=20, pady=(20, 20), columnspan=4, sticky="nesw")
+
+        # TODO: Userform erstellen
+        # TODO: Senden an einzelpersonen und an Gruppen -> Auswahl über ein Dropdown und Radio-Buttons
+        # TODO: Anrede auswählen können
+        # TODO: ...
 
         # update the button text on initial creation
         self.update_button_text()
 
     def update_button_text(self):
-        # get the button text from the App instance
-        button_text = self.app.home_entry.get()  # cget("attr") to get smth different.
-        # update the label with the button text
-        print(button_text)
-        # self.button_text.config(text="Button text: {}".format(button_text))
+        pass"""
 
 
 class App(customtkinter.CTk):
@@ -331,6 +340,15 @@ class App(customtkinter.CTk):
                                                                 )  # command=lambda: self.del_group(self.gr_txtb_nr.get()))
         self.second_frame_button_goto.grid(row=8, column=3, sticky="ne", padx=(0, 20), columnspan=1)
 
+        self.second_frame_button_send = customtkinter.CTkButton(self.second_frame, corner_radius=10, height=40,
+                                                                border_spacing=10, text="Senden an mich",
+                                                                fg_color="#51abcb", text_color=("gray10", "gray90"),
+                                                                hover_color=("#a8d5e5", "#92cbdf"),
+                                                                anchor="w",
+                                                                state="normal",
+                                                                command=self.send_warning)
+        self.second_frame_button_send.grid(row=8, column=2, sticky="ne", padx=(0, 20), columnspan=1)
+
         """
             Create Custom Warnung
         """
@@ -461,7 +479,7 @@ class App(customtkinter.CTk):
                                                             border_width=2,
                                                             text_color=("gray10", "#DCE4EE"),
                                                             command=self.save_new_warning,
-                                                            text="Absenden")
+                                                            text="Speichern")
         self.third_frame_btn_save.grid(row=13, column=3, padx=(20, 20), pady=(20, 20), sticky="se")
         self.third_frame_btn_save = customtkinter.CTkButton(master=self.third_frame, fg_color="transparent",
                                                             border_width=2,
@@ -772,7 +790,7 @@ class App(customtkinter.CTk):
     #    customtkinter.set_appearance_mode(new_appearance_mode)
     def open_toplevel(self):
         if self.toplevel_window is None or not self.toplevel_window.winfo_exists():
-            self.toplevel_window = ToplevelWindow(self, self)  # create window if its None or destroyed
+            self.toplevel_window = uie.ToplevelWindow(self, self)  # create window if its None or destroyed
         else:
             self.toplevel_window.focus()  # if window exists focus it
 
@@ -1002,8 +1020,15 @@ class App(customtkinter.CTk):
 
         print(versionen)
 
-        # print("combobox dropdown clicked:", choice)
-        # print(val)
+        # Reset der Elemente auf Werkeinstellung
+        # Bilder auf Platzhalter und Texte leeren
+        self.second_codeiiimg.configure(
+            light_image=Image.open(os.path.join("Test/test_images/platzhalter.png")).resize((256, 256)),
+            dark_image=Image.open(os.path.join("Test/test_images/platzhalter.png")).resize((256, 256)))
+        self.second_img.configure(
+            light_image=Image.open(os.path.join("Test/test_images/platzhalter.png")).resize((256, 256)),
+            dark_image=Image.open(os.path.join("Test/test_images/platzhalter.png")).resize((256, 256)))
+
         self.second_desc.delete("0.0", customtkinter.END)
         self.second_title.delete(0, customtkinter.END)
         self.second_desc.insert("0.0", val[0][9])
@@ -1108,14 +1133,16 @@ class App(customtkinter.CTk):
         var_currentDateTime = str(datetime.datetime.now())[0:19]
 
         if cancel_wid:
-            query = "UPDATE warnings SET type = 'Cancel', version={}, last_update='{}' WHERE wid='{}'".format(int(var_version) + 1,var_currentDateTime, var_wid)
+            query = "UPDATE warnings SET type = 'Cancel', version={}, last_update='{}' WHERE wid='{}'".format(
+                int(var_version) + 1, var_currentDateTime, var_wid)
             Database.execute_db(query, "warn.db")
 
             query = "INSERT INTO warning_information (wid,version,sender,status,msgType,scope,senderName,headline," \
                     "text,web,areaDesc,codeIMG,image,event,urgency,severity,certainty,DateEffective,DateOnset," \
                     "DateExpires,instruction) VALUES(" \
                     "'{}',{},'{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}'," \
-                    "'{}','{}')".format(var_wid, int(var_version) + 1, "Custom", var_status, "Cancel", "Public", var_sender, var_title,
+                    "'{}','{}')".format(var_wid, int(var_version) + 1, "Custom", var_status, "Cancel", "Public",
+                                        var_sender, var_title,
                                         var_descr, var_web, var_area, var_imgc, var_img, var_event, var_urgancy,
                                         var_severity, var_certainty, var_effective, var_currentDateTime, var_expires,
                                         var_instruction)
@@ -1123,12 +1150,11 @@ class App(customtkinter.CTk):
 
             messagebox.showwarning("STATUS: Cancel", "Warnmeldung wurde aufgehoben!")
             self.clear_frame_3()
-            simulate_choice = str(var_currentDateTime)+": " + var_title + " (" + var_wid + ")"
+            simulate_choice = str(var_currentDateTime) + ": " + var_title + " (" + var_wid + ")"
             self.combobox_callback_warnings(simulate_choice, int(var_version) + 1)
             self.frame_2_button_event()
         elif status == "normal":
 
-            messagebox.showwarning("STATUS: NORMAL", "Feld ist normal " + str(datetime.datetime.now())[0:19])
             query = "INSERT INTO warning_information (wid,version,sender,status,msgType,scope,senderName,headline," \
                     "text,web,areaDesc,codeIMG,image,event,urgency,severity,certainty,DateEffective,DateOnset," \
                     "DateExpires,instruction) VALUES(" \
@@ -1161,7 +1187,6 @@ class App(customtkinter.CTk):
                                         var_severity, var_certainty, var_effective, var_currentDateTime, var_expires,
                                         var_instruction)
             success = Database.execute_db(query, "warn.db")
-            messagebox.showwarning("STATUS: DISABLED", "Feld ist disabled")
         else:
             messagebox.showerror("Fehler",
                                  "Status kann nicht ermittelt werden! Sie müssen den Vorgang neu durchführen.")
@@ -1236,6 +1261,21 @@ class App(customtkinter.CTk):
 
         return text
 
+    def send_warning(self):
+        regex = r"\(([^()]+)\)[^()]*$"
+
+        # Suchen des Regex innerhalb des Textes
+        match = re.search(regex, self.combobox_warnungen.get())
+
+        # Überprüfen, ob ein Treffer gefunden wurde
+        if match:
+            # Extrahiere den Text aus dem Treffer
+            text_in_klammern = match.group(1)
+        wid = text_in_klammern
+        user = "784506299"
+        tb = telegram_api.TelegramBot("5979163637:AAFsR0MwfvPb9FwB2oPQKPQJlnkmkcZmKmg", self)
+        tb.send_warnings(wid, "", user)
+
     def send_all_fnc(self):
         """
         Sendet Nachrichten an ALLE Nutzer vom Bot
@@ -1269,7 +1309,7 @@ class App(customtkinter.CTk):
         count3 = c.fetchone()[0]
         self.home_label_dbInfo.configure(
             text="STATISTIK\n \nAnzahl User:\t" + str(count2) + "\n\nAnzahl Warnings:\t" + str(warnings) +
-                 "\n      Alerts:\t\t" + str(warnings2) +
+                 "\n      Alerts:\t" + str(warnings2) +
                  "\n      Updates:\t" + str(warnings - warnings2) +
                  "\n      Custom:\t" + str(warnings3) +
                  "\n\nAnzahl Gruppen:\t" + str(count3))
