@@ -7,6 +7,7 @@ from db_functions import Database
 from datetime import datetime
 import os
 import json
+import re
 import logging
 
 
@@ -242,7 +243,7 @@ class Collector:
             """
         else:
             pass
-            #print(response.status_code)
+            # print(response.status_code)
 
         # query = ""
         # Database.execute_db(query, self.__DB)
@@ -253,9 +254,10 @@ class Collector:
         query = "INSERT INTO warning_information (wid,version,sender,status,msgType,scope,senderName,headline,text,web,areaDesc,codeIMG,image,event,urgency, severity, certainty, DateEffective,DateOnset,DateExpires,instruction)" \
                 "VALUES ('{}',{},'{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}')".format(
             wid, ver, sender, status, msgType, scope, senderName, headline, desc, web, area,
-            self.get_codeimg(eventCode), self.get_logo(sender), event, urgency, severity, certainty, effective, onset, expires,
+            self.get_codeimg(eventCode), self.get_logo(sender), event, urgency, severity, certainty, effective, onset,
+            expires,
             instruction)
-        #print(query)
+        # print(query)
         Database.execute_db(query, self.__DB)
 
     def get_logo(self, sender) -> str:
@@ -268,10 +270,10 @@ class Collector:
             json_data = json.dumps(data)
             data = json.loads(json_data)
             for d in data['logos']:
-                #print(d)
+                # print(d)
                 if str(sender) in d['senderId']:
                     img = d['image']
-                    #print("https://nina.api.proxy.bund.dev/api31/appdata/gsb/logos/{}".format(img))
+                    # print("https://nina.api.proxy.bund.dev/api31/appdata/gsb/logos/{}".format(img))
                     return "https://nina.api.proxy.bund.dev/api31/appdata/gsb/logos/{}".format(img)
         else:
             print(response.status_code)
@@ -288,10 +290,10 @@ class Collector:
             json_data = json.dumps(data)
             data = json.loads(json_data)
             for d in data['eventCodes']:
-                #print(d)
+                # print(d)
                 if str(eventcode) in d['eventCode']:
                     img = d['imageUrl']
-                    #print("https://nina.api.proxy.bund.dev/api31/appdata/gsb/eventCodes/{}".format(img))
+                    # print("https://nina.api.proxy.bund.dev/api31/appdata/gsb/eventCodes/{}".format(img))
                     return "https://nina.api.proxy.bund.dev/api31/appdata/gsb/eventCodes/{}".format(img)
         else:
             print(response.status_code)
@@ -345,6 +347,51 @@ class Collector:
         elif geojson["type"] == "MultiPolygon":
             return self.point_in_multipolygon(geojson["coordinates"], point)
 
+    def collect_notfalltipps(self):
+        # URL, von der die Daten abgerufen werden sollen
+        url = "https://nina.api.proxy.bund.dev/api31/appdata/gsb/notfalltipps/DE/notfalltipps.json"
+
+        # Tabelle erstellen, falls sie noch nicht existiert
+        Database.execute_db('''CREATE TABLE IF NOT EXISTS notfalltipps 
+                        (id INTEGER PRIMARY KEY, kategorie TEXT, kategorie2 TEXT, titel TEXT,  inhalt TEXT)''',
+                            self.__DB)
+
+        # JSON-Daten abrufen und durchgehen
+        response = requests.get(url)
+        data = response.json()
+        # Alle Informationen aus der JSON-Datei in die SQLite-Datenbank schreiben
+        for category in data['notfalltipps']['category']:
+            #print(str(category['title']) + "\n")
+            kategorie = str(category['title'])
+            for title in category['tips']:
+                #print(title["title"])
+                kategorie2 = str(title["title"])
+                for item in title['articles']:
+                    # Eintrag in SQLite-Datenbank einfügen
+                    query = "INSERT INTO notfalltipps (kategorie, kategorie2, titel, inhalt) VALUES ('{}', '{}', '{}', '{}')".format(
+                        kategorie, kategorie2, item["title"], self.telegram_supported(item["bodytext"]))
+                    print(query)
+                    Database.execute_db(query, self.__DB)
+                    #print("\t" + str(item))
+
+            print("\n\n\n")
+
+    def telegram_supported(self, text):
+        """
+        Diese Methode ersetzt <b>-Tags durch Fettdruck-Markdown (*text*), <i>-Tags durch Kursiv-Markdown (_text_) und
+        <a>-Tags durch verlinkten Text-Markdown ([text](url)). Alle anderen HTML-Tags werden einfach entfernt.
+        :param text:
+        :return:
+        """
+        # Ersetze unterstützte Markdown-Formatierungen
+        text = re.sub(r'<b>(.*?)</b>', r'*\1*', text)
+        text = re.sub(r'<i>(.*?)</i>', r'_\1_', text)
+        text = re.sub(r'<a href="(.*?)">(.*?)</a>', r'[\2](\1)', text)
+
+        # Entferne alle anderen HTML-Tags
+        text = re.sub(r'<.*?>', '', text)
+
+        return text
 
 """if __name__ == "__main__":
     server = f'https://warnung.bund.de/api31'

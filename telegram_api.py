@@ -1,3 +1,5 @@
+import sqlite3
+
 import requests
 import logging
 import json
@@ -43,6 +45,14 @@ class TelegramBot:
     """
 
     def send_multiple_message(self, text, where=None):
+        """
+        Sendet mehrere Nachrichten raus, an alle Nutzer des Bots.
+        Alle Nutzer erhalten die Nachricht text.
+
+        :param text:
+        :param where:
+        :return:
+        """
         db = Database()
         userlist = db.get_query("users", where)
         liste = []
@@ -59,7 +69,16 @@ class TelegramBot:
 
         return userlist
 
-    def send_msg_keyboard(self, chat_id, message, opt_keyboard):
+    def send_msg_keyboard(self, chat_id, message, opt_keyboard, one_time=True):
+        """
+        Sendet eine Nachricht mit Keyboard raus. Das Keyboard wird am unteren Rand des Chats angezeigt.
+
+        :param chat_id:
+        :param message:
+        :param opt_keyboard:
+        :param one_time:
+        :return:
+        """
         # Keyboard-Daten im JSON-Format
         """keyboard = {
             "keyboard": [
@@ -72,9 +91,9 @@ class TelegramBot:
         }"""
         keyboard = {
             "keyboard": opt_keyboard,
-            "one_time_keyboard": True,
-            "resize_keyboard": True  # ,
-            # 'is_persistent': True
+            "one_time_keyboard": one_time,
+            "resize_keyboard": True
+            #'is_persistent': True
         }
         # Nachricht, die das Keyboard enthält
         # message = "Wählen Sie eine Option aus dem Keyboard"
@@ -86,7 +105,8 @@ class TelegramBot:
         params = {
             'chat_id': chat_id,
             'text': message,
-            'reply_markup': keyboard_json
+            'reply_markup': keyboard_json,
+            "parse_mode": "HTML"
         }
 
         # Anfrage an die Telegram-API senden
@@ -100,6 +120,17 @@ class TelegramBot:
 
     def send_photo(self, chat_id, photo_url, caption=None, parse_mode=None, reply_markup=None,
                    disable_notification=False):
+        """
+        Sendet ein Bild mit Beschreibung und Parametern an die chat_id
+
+        :param chat_id:
+        :param photo_url:
+        :param caption:
+        :param parse_mode:
+        :param reply_markup:
+        :param disable_notification:
+        :return:
+        """
         params = {
             "chat_id": chat_id,
             "photo": photo_url,
@@ -117,12 +148,24 @@ class TelegramBot:
         return response
 
     def message_replace(self, msg):
+        """
+        Ersetzt manche HTML-Zeichen, die von Telegram nicht erkannt werden.
+        :param msg:
+        :return:
+        """
         msg = msg.replace("<br/>", "\n")
         msg = msg.replace("<br>", "\n")
 
         return msg
 
     def send_message(self, chat_id, text, quickreply=None):
+        """
+        Sendet eine Nachricht an die chat_id mit dem Inhalt von text. quickreply bietet die Möglichkeit eines Keyboards.
+        :param chat_id:
+        :param text:
+        :param quickreply:
+        :return:
+        """
         now = datetime.now()
         current_time = now.strftime("%d-%m-%Y %H:%M:%S")
 
@@ -161,6 +204,7 @@ class TelegramBot:
     def split_text(self, text):
         """
         Teilt einen String in 4000 Zeichen auf, weil die Maximallänge knapp 4000 Zeichen pro Nachricht in Telegram ist!
+        1025 Zeichen sind die Grenze bei der Beschreibung eines Bildes.
         :return:
         """
         chunks = []
@@ -181,7 +225,6 @@ class TelegramBot:
 
     def send_warnings(self, wid, version=None, chatid=None, username=None):
         """
-        TODO: Sendet warnungen raus -> (1) Bild (2) Text (3) Verhalten (4) weitere Infos und Button mit Url
         Sendet die Warnmeldungen raus
         Verbindet SendMessage und SendImage
         :return:
@@ -372,14 +415,17 @@ class TelegramBot:
             ]
             self.send_msg_keyboard(chat_id, "Weitere Warnmeldungsarten?", msg_keyboard)
         elif "Alle Warnmeldungen" in text:
-            self.send_message(chat_id,
-                              "&#9989; Setup abgeschlossen! \n Das Setup kann jederzeit neu gestartet werden durch /start")
+            msg_keyboard = [
+                ["Help", "Verhalten Tipps"], ["Notrufnummern"]
+            ]
+            self.send_msg_keyboard(chat_id,
+                              "&#9989; Setup abgeschlossen! \n Das Setup kann jederzeit neu gestartet werden durch /start", msg_keyboard, False)
 
         elif text == "/stop":
             return "&#9989; Dienst wurde pausiert."
         elif text == "/abmelden":
             return "&#9989; Sie wurden aus der Datenbank gelöscht. Ab sofort erhalten Sie keine weiteren Meldungen mehr!\nHoffentlich bis bald!"
-        elif text == "/help":
+        elif text == "/help" or text == "Help":
             return "/stop (Pausieren des Dienstes)\n" \
                    "/abmelden (Austrag aus dem Dienst)\n" \
                    "/count_users (Zeigt die Anzahl der Nutzende an)\n" \
@@ -395,37 +441,102 @@ class TelegramBot:
             return "ALle Warnungen stammen aus der offiziellen NINA API, welche vom Bundesamt für Bevölkerungsschutz gepflegt wird. Alle übermittelten Warnungen, werden ungefiltert über diesen Bot verbreitet."
         elif text == "/disclaimer":
             return "&#128679; Folgt."
+        elif text == "Notrufnummern":
+            return "<b>Wichtige Notrufnummern in DE:</b>\n - Polizei: 110\n- Rettungsdienst und Feuerwehr: 112\n- Ärztlicher Bereitschaftsdienst: 116117\n\n" \
+                   "<b>Giftnotrufzentralen</b>\n" \
+                   "<b>Baden-Württemberg</b> (Telefon: 0761 19240)\n" \
+                   "<b>Bayern</b> (Telefon: 089 19240)\n" \
+                   "<b>Berlin, Brandenburg</b> (Telefon: 030 19240)\n" \
+                   "<b>Bremen, Hamburg, Schleswig-Holstein, Niedersachsen</b> (Telefon: 0551 192 40)\n" \
+                   "<b>Hessen, Rheinland-Pfalz</b> (Telefon: 06131 192 40)\n" \
+                   "<b>Mecklenburg-Vorpommern, Sachsen, Sachsen-Anhalt, Thüringen</b> (Telefon: 0361 730730)\n" \
+                   "<b>Nordrhein-Westfalen</b> (Telefon: 0228 19240)\n" \
+                   "<b>Saarland</b> (Telefon: 06841 19240)\n\n" \
+                   "Quelle: https://www.malteser.de/aware/hilfreich/notrufnummern-in-deutschland-das-musst-du-wissen.html"
+        elif text == "Verhalten Tipps":
+            keyboard = []
+            conn = sqlite3.connect('warn.db')
+            c = conn.cursor()
+
+            c.execute("SELECT DISTINCT(kategorie) from notfalltipps")
+            kategorien = c.fetchall()
+            num_kategorien = len(kategorien)
+            if num_kategorien % 2 == 0:
+                # even number of elements
+                for i in range(0, num_kategorien, 2):
+                    keyboard.append([kategorien[i][0], kategorien[i + 1][0]])
+            else:
+                # odd number of elements
+                for i in range(0, num_kategorien - 1, 2):
+                    keyboard.append([kategorien[i][0], kategorien[i + 1][0]])
+                keyboard.append([kategorien[-1][0]])
+
+            keyboard.append(['zurück'])
+            print(keyboard)
+            msg_keyboard = keyboard
+            self.send_msg_keyboard(chat_id,
+                                   "Wähle eine Option aus:",
+                                   msg_keyboard, False)
+        elif text == "zurück" or text == ">> Startseite":
+            msg_keyboard = [
+                ["Help", "Verhalten Tipps"], ["Notrufnummern"]
+            ]
+            self.send_msg_keyboard(chat_id,
+                                   "Wähle eine Option aus:",
+                                   msg_keyboard, False)
         else:
-            return "&#10060; Fehler: Diese Nachricht konnte nicht verarbeitet werden. Möglicherweise wurde ich nicht für die gewünschte Aktion entwickelt. \n \n Mit <b>/help</b> werden alle Funktionen angezeigt."
+            # TODO: Manche Notfalltipps werden nicht korrekt ausgegeben. Der Inhalt wird fälschlicherweise bei manchen Optionen als Kategorie gesehen, nicht als Titel
+            keyboard = []
+            conn = sqlite3.connect('warn.db')
+            c = conn.cursor()
 
-    """def run(self, reply_func):
-        while True:
-            updates = self.get_updates()
-            for update in updates:
-                print(update)
-                message = update.get('message')
-                if message and 'text' in message:
-                    chat_id = message['chat']['id']
+            c.execute("SELECT DISTINCT(kategorie2) from notfalltipps WHERE kategorie='{}'".format(text))
+            results_kat2 = c.fetchall()
 
-                    uid = message['from']['id']
-                    u = Users.__init__(uid)
-                    userdata = [
-                        message['from']['first_name'],
-                        message['from']['language_code'],
-                        ""                                  # Welche Warnungen sollen gesendet werden? INT 1-x
-                    ]
-                    u.check_user(uid, userdata)
+            c.execute("SELECT DISTINCT(titel) from notfalltipps WHERE kategorie2='{}'".format(text))
+            results_title = c.fetchall()
 
-                    text = message['text']
-                    if '/start' in text:
-                        text = 'Einleitung coming soon!'
-                    reply = reply_func(text)
-                    self.send_message(chat_id, reply)
+            if len(results_kat2) > 0:
+                msg_keyboard = self.generate_keyboard(results_kat2)
+                self.send_msg_keyboard(chat_id,
+                                       "Wähle eine Option aus:",
+                                       msg_keyboard, False)
+            elif len(results_title) > 0:
+
+                msg_keyboard = self.generate_keyboard(results_title)
+                self.send_msg_keyboard(chat_id,
+                                       "Wähle eine Option aus:",
+                                       msg_keyboard, False)
+            else:
+                c.execute("SELECT inhalt from notfalltipps WHERE titel='{}'".format(text))
+                result_inhalt = c.fetchall()
+                if len(result_inhalt) > 0:
+                    self.send_message(chat_id, result_inhalt[0][0])
                 else:
-                    reply = reply_func("Aktuell können nur Text-MSG verarbeitet werden")
-                    self.send_message(chat_id, reply)
-            time.sleep(5)"""
+                    return "&#10060; Fehler: Diese Nachricht konnte nicht verarbeitet werden. Möglicherweise wurde ich nicht für die gewünschte Aktion entwickelt. \n \n Mit <b>/help</b> werden alle Funktionen angezeigt."
 
+    def generate_keyboard(self, array):
+        """
+        Erhält ein Array mit Werten, welche zu einem Keyboard verknüpft werden. 2-Elemente pro Reihe!
+
+        :param array:
+        :return:
+        """
+        keyboard = []
+        if len(array) > 0:
+            num_kategorien = len(array)
+            if num_kategorien % 2 == 0:
+                # even number of elements
+                for i in range(0, num_kategorien, 2):
+                    keyboard.append([array[i][0], array[i + 1][0]])
+            else:
+                # odd number of elements
+                for i in range(0, num_kategorien - 1, 2):
+                    keyboard.append([array[i][0], array[i + 1][0]])
+                keyboard.append([array[-1][0]])
+            keyboard.append(['>> Startseite'])
+
+        return keyboard
     def process_updates(self, updates):
         """
         Inhalt der Nachricht aus der Update JSON wird analysiert. Wenn die Narchricht vom Bot verwertet werden kann,
