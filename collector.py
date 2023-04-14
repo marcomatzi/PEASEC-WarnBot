@@ -19,6 +19,21 @@ class Collector:
 
     @staticmethod
     def custom_warning(wid, title_de, title_en, version, severity, type, geo, source, descr):
+        """
+        Funktion für Custom-Warnmeldungen. Updated oder Schreibt in die DB.
+        OUTDATED.
+
+        :param wid:
+        :param title_de:
+        :param title_en:
+        :param version:
+        :param severity:
+        :param type:
+        :param geo:
+        :param source:
+        :param descr:
+        :return:
+        """
         db = Database()
         res = db.check_if_exist("warnings", "warn.db", "wid", wid)
         if res:
@@ -32,6 +47,11 @@ class Collector:
         Database.execute_db(query, "warn.db")
 
     def check_exist_json(self, list_of_files):
+        """
+        prüft ob ein JSON-File existiert und erstellt es ggf.
+        :param list_of_files:
+        :return:
+        """
         path = os.path.dirname(__file__) + "/last_updates/"
         for f in list_of_files:
 
@@ -43,11 +63,24 @@ class Collector:
                 print("File " + f_path + " wurde erstellt!")
 
     def write_in_json(self, data, f):
+        """
+        Schreibt in ein JSON file.
+        :param data:
+        :param f:
+        :return:
+        """
         f_path = self.path_json + f + ".json"
         with open(f_path, "w") as file:
             file.write(str(data))
 
     def compare_json_files(self, data1, data2):
+        """
+        Vergleicht zwei JSON files auf unterschiedlichkeiten.
+        Wird für die Suche nach Updates verwendet.
+        :param data1:
+        :param data2:
+        :return:
+        """
         # Data1 ist der aktulle Stand (JSON)
         # Data2 ist der Remote stand (JSON)
         try:
@@ -62,6 +95,12 @@ class Collector:
             return False  # ungleich
 
     def catch_warnings(self, offset):
+        """
+        Ruft für jede Warnschnittstelle die JSON ab und prüft auf neue Updates.
+
+        :param offset: alter JSON-Stand
+        :return:
+        """
         api_urls = [
             ['KAT', 'https://nina.api.proxy.bund.dev/api31/katwarn/mapData.json'],  # Katwarn Meldungen
             ['BIW', 'https://nina.api.proxy.bund.dev/api31/biwapp/mapData.json'],  # Biwapp Meldungen
@@ -106,6 +145,11 @@ class Collector:
     import json
 
     def process_information(self, updates):
+        """
+        Verarbeitet die einkommenden Updates und erstellt einen neuen Eintrag in der DB oder Updated einen bestehenden.
+        :param updates:
+        :return:
+        """
         m_last_update = datetime.now()
         m_last_update = m_last_update.strftime("%d-%m-%Y %H:%M:%S")
 
@@ -185,6 +229,11 @@ class Collector:
                 self.get_warning_information(m_id, m_version)
 
     def force_update_info(self):
+        """
+        Erzwingt das Updaten von Informationen aller Warnmeldungen.
+        Findet im normalem Prozess keinen Einsatz & wurde in der Entwicklung verwendet.
+        :return:
+        """
         # SELECT-Abfrage ausführen, um die wid-Spalte aus der Tabelle warnings abzurufen
         results = Database.get_query("warnings")
 
@@ -198,6 +247,13 @@ class Collector:
             i += 1
 
     def get_warning_information(self, wid, ver):
+        """
+        Ruft die Informationen einer Warnmeldung ab.
+
+        :param wid:
+        :param ver:
+        :return:
+        """
         url = "https://nina.api.proxy.bund.dev/api31/warnings/{}.json".format(wid)
         response = requests.get(f"{url}", {"timeout": 100})
 
@@ -231,26 +287,35 @@ class Collector:
                                       dataInfo['area'][0]['areaDesc'], dataInfo2.get("instruction", ""),
                                       dataInfo2.get("certainty", ""), dataInfo2.get("onset", ""),
                                       dataInfo2.get("expires", ""), dataInfo2.get("eventCode", ""))
-
-            """
-            for d in data:
-                if str(d) == "info":
-                    for di in data['info']:
-                        data2 = data['info']
-                        dictionary = {"Name": data2[0], "Alter": eintrag[1], "Stadt": eintrag[2]}
-                        data_array.append({str(di), str(data2[di])})
-                data_array.append({str(d), str(data[d])})
-            """
         else:
             pass
-            # print(response.status_code)
-
-        # query = ""
-        # Database.execute_db(query, self.__DB)
 
     def write_db_information(self, wid, ver, sender, status, msgType, scope, event, urgency, severity, effective,
                              senderName, headline, desc, web, area, instruction, certainty, onset, expires, eventCode):
-
+        """
+        Generiert die SQL-Query um eine Information zu einer warnmeldung in der DB abzuspeichern. Query wird an Database.execute_db weitergeleitet.
+        :param wid:
+        :param ver:
+        :param sender:
+        :param status:
+        :param msgType:
+        :param scope:
+        :param event:
+        :param urgency:
+        :param severity:
+        :param effective:
+        :param senderName:
+        :param headline:
+        :param desc:
+        :param web:
+        :param area:
+        :param instruction:
+        :param certainty:
+        :param onset:
+        :param expires:
+        :param eventCode:
+        :return:
+        """
         query = "INSERT INTO warning_information (wid,version,sender,status,msgType,scope,senderName,headline,text,web,areaDesc,codeIMG,image,event,urgency, severity, certainty, DateEffective,DateOnset,DateExpires,instruction)" \
                 "VALUES ('{}',{},'{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}')".format(
             wid, ver, sender, status, msgType, scope, senderName, headline, desc, web, area,
@@ -261,6 +326,11 @@ class Collector:
         Database.execute_db(query, self.__DB)
 
     def get_logo(self, sender) -> str:
+        """
+        Ruft das Logo einer Warnmeldung ab. Liefert, sofern vorhanden, dass Bild des Herausgebers einer Warnmeldung.
+        :param sender:
+        :return:
+        """
         url = "https://nina.api.proxy.bund.dev/api31/appdata/gsb/logos/logos.json"
         response = requests.get(f"{url}", {"timeout": 100})
 
@@ -279,6 +349,11 @@ class Collector:
             print(response.status_code)
 
     def get_codeimg(self, eventcode) -> str:
+        """
+        Ruft das Bild vom Eventcode ab. Liefert ein Bild mit einem Symbol wieder.
+        :param eventcode:
+        :return:
+        """
         url = "https://nina.api.proxy.bund.dev/api31/appdata/gsb/eventCodes/eventCodes.json"
         response = requests.get(f"{url}", {"timeout": 100})
         if len(eventcode) < 1:
@@ -334,6 +409,13 @@ class Collector:
         return False
 
     def point_in_geojson(self, geojson: dict, point: tuple) -> bool:
+        """
+        Vorbereitung um die GEO-Daten von Warnmeldungen auszuwerten. Wird in der aktuellen Version nicht verwendet.
+        Unterstützt die Ortung und Zuordnung von Meldungen an den aktuellen Standort.
+        :param geojson:
+        :param point:
+        :return:
+        """
         if geojson["type"] == "Point":
             return point == tuple(geojson["coordinates"])
         elif geojson["type"] == "LineString":
@@ -348,6 +430,12 @@ class Collector:
             return self.point_in_multipolygon(geojson["coordinates"], point)
 
     def collect_notfalltipps(self):
+        """
+        Sammelt die Informationen aus der JSON mit Notfalltipps und speichert diese in der DB ab.
+        Dieser Prozess wird nicht regelmäßig durchgeführt, sondern muss getriggert werden.
+        Updaten von Informationen ist ebenfalls hierbei nicht vorgesehen.
+        :return:
+        """
         # URL, von der die Daten abgerufen werden sollen
         url = "https://nina.api.proxy.bund.dev/api31/appdata/gsb/notfalltipps/DE/notfalltipps.json"
 
@@ -374,7 +462,7 @@ class Collector:
                     Database.execute_db(query, self.__DB)
                     #print("\t" + str(item))
 
-            print("\n\n\n")
+            #print("\n\n\n")
 
     def telegram_supported(self, text):
         """

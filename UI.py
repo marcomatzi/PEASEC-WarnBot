@@ -340,6 +340,8 @@ class App(customtkinter.CTk):
                                                                 )  # command=lambda: self.del_group(self.gr_txtb_nr.get()))
         self.second_frame_button_goto.grid(row=8, column=3, sticky="ne", padx=(0, 20), columnspan=1)
 
+        """
+        Button um Warnmeldungen direkt versenden zu können! Nutzer wird in send_warning hinterlegt
         self.second_frame_button_send = customtkinter.CTkButton(self.second_frame, corner_radius=10, height=40,
                                                                 border_spacing=10, text="Senden an mich",
                                                                 fg_color="#51abcb", text_color=("gray10", "gray90"),
@@ -347,7 +349,7 @@ class App(customtkinter.CTk):
                                                                 anchor="w",
                                                                 state="normal",
                                                                 command=self.send_warning)
-        self.second_frame_button_send.grid(row=8, column=2, sticky="ne", padx=(0, 20), columnspan=1)
+        self.second_frame_button_send.grid(row=8, column=2, sticky="ne", padx=(0, 20), columnspan=1)"""
 
         """
             Create Custom Warnung
@@ -1262,6 +1264,10 @@ class App(customtkinter.CTk):
         return text
 
     def send_warning(self):
+        """
+        Funktion für das Testen wärend der Entwicklungsphase.
+        :return:
+        """
         regex = r"\(([^()]+)\)[^()]*$"
 
         # Suchen des Regex innerhalb des Textes
@@ -1272,7 +1278,7 @@ class App(customtkinter.CTk):
             # Extrahiere den Text aus dem Treffer
             text_in_klammern = match.group(1)
         wid = text_in_klammern
-        user = "784506299"
+        user = ""           # ChatID hinterlegen
         tb = telegram_api.TelegramBot("5979163637:AAFsR0MwfvPb9FwB2oPQKPQJlnkmkcZmKmg", self)
         tb.send_warnings(wid, "", user)
 
@@ -1309,7 +1315,7 @@ class App(customtkinter.CTk):
         count3 = c.fetchone()[0]
         self.home_label_dbInfo.configure(
             text="STATISTIK\n \nAnzahl User:\t" + str(count2) + "\n\nAnzahl Warnings:\t" + str(warnings) +
-                 "\n      Alerts:\t" + str(warnings2) +
+                 "\n      Alerts:\t\t" + str(warnings2) +
                  "\n      Updates:\t" + str(warnings - warnings2) +
                  "\n      Custom:\t" + str(warnings3) +
                  "\n\nAnzahl Gruppen:\t" + str(count3))
