@@ -223,7 +223,7 @@ class TelegramBot:
         print(chunks)
         return chunks
 
-    def send_warnings(self, wid, version=None, chatid=None, username=None, phase=None):
+    def send_warnings(self, wid, version=None, chatid=None, username=None, phrase=None):
         """
         Sendet die Warnmeldungen raus
         Verbindet SendMessage und SendImage
@@ -256,13 +256,13 @@ class TelegramBot:
                 result[17]) + "\n\n" + "<b>Seit dem:</b> " + str(result[18]) + "\n" + "<b>Bis zum:</b> " + str(
                 result[20]) + "\n\n" + "<b>Diese Warnmeldung gilt für :</b> " + str(result[11])
         else:
-            if phase != "" or phase is not None:
-                phase = phase.replace("[username]", str(username))
-                phase = str(phase) + "\n"
+            if phrase != "" or phrase is not None:
+                phrase = phrase.replace("[username]", str(username))
+                phrase = str(phrase) + "\n"
             else:
-                phase = "Hallo " + str(username) + "! Es gibt eine neue Warnmeldung -> \n"
+                phrase = "Hallo " + str(username) + "! Es gibt eine neue Warnmeldung -> \n"
 
-            warnmeldung_txt = str(phase) + str(result[5]) + ": " + result[8] + "\n\n" + str(
+            warnmeldung_txt = str(phrase) + str(result[5]) + ": " + result[8] + "\n\n" + str(
                 result[9]) + "\n\n" + "<b>Anweisung:</b> " + str(result[21]) + "<b>Herausgeber:</b> " + str(
                 result[7]) + "  (" + str(result[10]) + ")" + "\n" + "<b>Dringlichkeit:</b> " + str(
                 result[15]) + "\n" + "<b>Schweregrad:</b> " + str(
@@ -387,19 +387,10 @@ class TelegramBot:
 
         elif phase == 4:
             """
-            Phase 2: Auswahl English
+            Phase 4: Region oder Stadt speichern
             """
-            msg = "&#9989; Für welche Region / Stadt sollen Warnmeldungen ausgegeben werden? Bitte eingeben (LIMIT: 1) :"
+            msg = "Schritt 3: Für welche Region / Stadt sollen Warnmeldungen ausgegeben werden? \n\nBeispiel:\n\tStadt: Berlin\noder\n\tRegion: Hessen\n\nBitte eingeben (LIMIT: 1) :"
             self.send_message(chatid, msg)
-            msg = "Schritt 2: About which alerts should the bot send messages?\nMultiple selection possible..\nFor more information, the web pages can be accessed by\n" \
-                  "/mowas\n/katwarn\n/biwapp"
-            msg_keyboard = [
-                ["Unwetterwarnungen (DE)", "Hochwasser"],
-                ["Polizeimeldungen", "MoWaS"],
-                ["Biwapp", "Katwarn"],
-                ["Alle Warnmeldungen (empfohlen)"]
-            ]
-            self.send_msg_keyboard(chatid, msg, msg_keyboard)
 
     def analyse_message(self, user_name, chat_id, text, replay_key = None):
         """
@@ -430,7 +421,15 @@ class TelegramBot:
             self.startSetup(chat_id, user_name, 1)
         elif text == "English":
             self.startSetup(chat_id, user_name, 2)
+        elif "Region:" in text or "Stadt:" in text:
+            Database.execute_db("UPDATE users SET pref_location='{}' WHERE chatid={}".format(text.split(":", 1)[1], chat_id), "warn.db")
 
+            msg_keyboard = [
+                ["Help", "Verhalten Tipps"], ["Notrufnummern"]
+            ]
+            self.send_msg_keyboard(chat_id,
+                                   "&#9989; Setup abgeschlossen! \n Das Setup kann jederzeit neu gestartet werden durch /start",
+                                   msg_keyboard, False)
 
 
         elif "Unwetterwarnungen" in text:
@@ -552,21 +551,24 @@ class TelegramBot:
                                    "Aktuelle gespeichert: {}\n\nWeitere Warnmeldungsarten?".format(re_user_info),
                                    msg_keyboard)
         elif "Fertig" in text:
-            msg_keyboard = [
+            """msg_keyboard = [
                 ["Help", "Verhalten Tipps"], ["Notrufnummern"]
             ]
             self.send_msg_keyboard(chat_id,
                                    "&#9989; Setup abgeschlossen! \n Das Setup kann jederzeit neu gestartet werden durch /start",
                                    msg_keyboard, False)
+            """
+            self.startSetup(chat_id, user_name, 4)
 
 
         elif "Alle Warnmeldungen" in text:
-            Database.execute_db("Update users SET warnings = 'Alle' WHERE chatid={}".format(chat_id), "warn.db")
+            """Database.execute_db("Update users SET warnings = 'Alle' WHERE chatid={}".format(chat_id), "warn.db")
             msg_keyboard = [
                 ["Help", "Verhalten Tipps"], ["Notrufnummern"]
             ]
             self.send_msg_keyboard(chat_id,
-                              "&#9989; Setup abgeschlossen! \n Das Setup kann jederzeit neu gestartet werden durch /start", msg_keyboard, False)
+                              "&#9989; Setup abgeschlossen! \n Das Setup kann jederzeit neu gestartet werden durch /start", msg_keyboard, False)"""
+            self.startSetup(chat_id, user_name, 4)
 
         elif text == "/stop":
             return "&#9989; Dienst wurde pausiert."
