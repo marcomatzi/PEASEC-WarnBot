@@ -223,7 +223,7 @@ class TelegramBot:
         print(chunks)
         return chunks
 
-    def send_warnings(self, wid, version=None, chatid=None, username=None):
+    def send_warnings(self, wid, version=None, chatid=None, username=None, phase=None):
         """
         Sendet die Warnmeldungen raus
         Verbindet SendMessage und SendImage
@@ -256,7 +256,13 @@ class TelegramBot:
                 result[17]) + "\n\n" + "<b>Seit dem:</b> " + str(result[18]) + "\n" + "<b>Bis zum:</b> " + str(
                 result[20]) + "\n\n" + "<b>Diese Warnmeldung gilt für :</b> " + str(result[11])
         else:
-            warnmeldung_txt = "Hallo " + str(username) + "! Es gibt eine neue Warnmeldung -> \n" + str(result[5]) + ": " + result[8] + "\n\n" + str(
+            if phase != "" or phase is not None:
+                phase = phase.replace("[username]", str(username))
+                phase = str(phase) + "\n"
+            else:
+                phase = "Hallo " + str(username) + "! Es gibt eine neue Warnmeldung -> \n"
+
+            warnmeldung_txt = str(phase) + str(result[5]) + ": " + result[8] + "\n\n" + str(
                 result[9]) + "\n\n" + "<b>Anweisung:</b> " + str(result[21]) + "<b>Herausgeber:</b> " + str(
                 result[7]) + "  (" + str(result[10]) + ")" + "\n" + "<b>Dringlichkeit:</b> " + str(
                 result[15]) + "\n" + "<b>Schweregrad:</b> " + str(
@@ -347,6 +353,7 @@ class TelegramBot:
             """
             Phase 1: Auswahl Deutsch
             """
+            Database.execute_db("Update users Set lang='{}' WHERE chatid={}".format("de", chatid), "warn.db")
             msg = "&#9989; Sprache wurde auf Deutsch festgelegt. Ab sofort erhalten Sie alle Warnmeldungen auf Deutsch."
             self.send_message(chatid, msg)
             msg = "Schritt 2: Über welche Warnmeldungen soll der Bot Nachrichten senden?\nMehrfachauswahl möglich..\n\nFÜr weitere Informationen können die Webseiten aufgerufen werden durch\n" \
@@ -364,6 +371,7 @@ class TelegramBot:
             """
             Phase 2: Auswahl English
             """
+            Database.execute_db("Update users Set lang='{}' WHERE chatid={}".format("en", chatid), "warn.db")
             msg = "&#9989; English was chosen as the language. Unfortunately, this language is not yet fully integrated," \
                   " therefore the warning messages are sent in German."
             self.send_message(chatid, msg)
@@ -377,7 +385,23 @@ class TelegramBot:
             ]
             self.send_msg_keyboard(chatid, msg, msg_keyboard)
 
-    def analyse_message(self, user_name, chat_id, text):
+        elif phase == 4:
+            """
+            Phase 2: Auswahl English
+            """
+            msg = "&#9989; Für welche Region / Stadt sollen Warnmeldungen ausgegeben werden? Bitte eingeben (LIMIT: 1) :"
+            self.send_message(chatid, msg)
+            msg = "Schritt 2: About which alerts should the bot send messages?\nMultiple selection possible..\nFor more information, the web pages can be accessed by\n" \
+                  "/mowas\n/katwarn\n/biwapp"
+            msg_keyboard = [
+                ["Unwetterwarnungen (DE)", "Hochwasser"],
+                ["Polizeimeldungen", "MoWaS"],
+                ["Biwapp", "Katwarn"],
+                ["Alle Warnmeldungen (empfohlen)"]
+            ]
+            self.send_msg_keyboard(chatid, msg, msg_keyboard)
+
+    def analyse_message(self, user_name, chat_id, text, replay_key = None):
         """
         Prüfung der Nachricht auf Befehle. Es wird nicht auf Beitext geprüft, sondern nur auf reine Befehle.
         Hier werden alle Statischen Antworte definiert und als return ausgegeben.
@@ -406,15 +430,138 @@ class TelegramBot:
             self.startSetup(chat_id, user_name, 1)
         elif text == "English":
             self.startSetup(chat_id, user_name, 2)
+
+
+
         elif "Unwetterwarnungen" in text:
+            re_user_info = Database.get_query("users", "chatid={}".format(chat_id))
+            re_user_info = re_user_info[0][4]
+            if re_user_info is None:
+                re_user_info = "Unwetterwarnung"
+            else:
+                if "Unwetterwarnung" not in re_user_info:
+                    re_user_info = str(re_user_info) + ", Unwetterwarnungen"
+            Database.execute_db("Update users SET warnings = '{}' WHERE chatid={}".format(re_user_info, chat_id), "warn.db")
             msg_keyboard = [
-                ["Hochwasser"],
+                ["Unwetterwarnungen (DE)", "Hochwasser"],
                 ["Polizeimeldungen", "MoWaS"],
                 ["Biwapp", "Katwarn"],
-                ["Alle Warnmeldungen (empfohlen)"]
+                ["Alle Warnmeldungen (empfohlen)"],
+                ["Fertig"]
             ]
-            self.send_msg_keyboard(chat_id, "Weitere Warnmeldungsarten?", msg_keyboard)
+            self.send_msg_keyboard(chat_id, "Aktuelle gespeichert: {}\n\nWeitere Warnmeldungsarten?".format(re_user_info), msg_keyboard)
+        elif "Hochwasser" in text:
+            re_user_info = Database.get_query("users", "chatid={}".format(chat_id))
+            re_user_info = re_user_info[0][4]
+            if re_user_info is None:
+                re_user_info = "Hochwasser"
+            else:
+                if "Hochwasser" not in re_user_info:
+                    re_user_info = str(re_user_info) + ", Hochwasser"
+            Database.execute_db("Update users SET warnings = '{}' WHERE chatid={}".format(re_user_info, chat_id),
+                                "warn.db")
+            msg_keyboard = [
+                ["Unwetterwarnungen (DE)", "Hochwasser"],
+                ["Polizeimeldungen", "MoWaS"],
+                ["Biwapp", "Katwarn"],
+                ["Alle Warnmeldungen (empfohlen)"],
+                ["Fertig"]
+            ]
+            self.send_msg_keyboard(chat_id,
+                                   "Aktuelle gespeichert: {}\n\nWeitere Warnmeldungsarten?".format(re_user_info),
+                                   msg_keyboard)
+        elif "Polizeimeldungen" in text:
+            re_user_info = Database.get_query("users", "chatid={}".format(chat_id))
+            re_user_info = re_user_info[0][4]
+            if re_user_info is None:
+                re_user_info = "Hochwasser"
+            else:
+                if "Polizeimeldungen" not in re_user_info:
+                    re_user_info = str(re_user_info) + ", Polizeimeldungen"
+            Database.execute_db("Update users SET warnings = '{}' WHERE chatid={}".format(re_user_info, chat_id),
+                                "warn.db")
+            msg_keyboard = [
+                ["Unwetterwarnungen (DE)", "Hochwasser"],
+                ["Polizeimeldungen", "MoWaS"],
+                ["Biwapp", "Katwarn"],
+                ["Alle Warnmeldungen (empfohlen)"],
+                ["Fertig"]
+            ]
+            self.send_msg_keyboard(chat_id,
+                                   "Aktuelle gespeichert: {}\n\nWeitere Warnmeldungsarten?".format(re_user_info),
+                                   msg_keyboard)
+        elif "Biwapp" in text:
+            re_user_info = Database.get_query("users", "chatid={}".format(chat_id))
+            re_user_info = re_user_info[0][4]
+            if re_user_info is None:
+                re_user_info = "Biwapp"
+            else:
+                if "Biwapp" not in re_user_info:
+                    re_user_info = str(re_user_info) + ", Biwapp"
+            Database.execute_db("Update users SET warnings = '{}' WHERE chatid={}".format(re_user_info, chat_id),
+                                "warn.db")
+            msg_keyboard = [
+                ["Unwetterwarnungen (DE)", "Hochwasser"],
+                ["Polizeimeldungen", "MoWaS"],
+                ["Biwapp", "Katwarn"],
+                ["Alle Warnmeldungen (empfohlen)"],
+                ["Fertig"]
+            ]
+            self.send_msg_keyboard(chat_id,
+                                   "Aktuelle gespeichert: {}\n\nWeitere Warnmeldungsarten?".format(re_user_info),
+                                   msg_keyboard)
+        elif "Katwarn" in text:
+            re_user_info = Database.get_query("users", "chatid={}".format(chat_id))
+            re_user_info = re_user_info[0][4]
+            if re_user_info is None:
+                re_user_info = "Katwarn"
+            else:
+                if "Katwarn" not in re_user_info:
+                    re_user_info = str(re_user_info) + ", Katwarn"
+            Database.execute_db("Update users SET warnings = '{}' WHERE chatid={}".format(re_user_info, chat_id),
+                                "warn.db")
+            msg_keyboard = [
+                ["Unwetterwarnungen (DE)", "Hochwasser"],
+                ["Polizeimeldungen", "MoWaS"],
+                ["Biwapp", "Katwarn"],
+                ["Alle Warnmeldungen (empfohlen)"],
+                ["Fertig"]
+            ]
+            self.send_msg_keyboard(chat_id,
+                                   "Aktuelle gespeichert: {}\n\nWeitere Warnmeldungsarten?".format(re_user_info),
+                                   msg_keyboard)
+        elif "MoWaS" in text:
+            re_user_info = Database.get_query("users", "chatid={}".format(chat_id))
+            re_user_info = re_user_info[0][4]
+            if re_user_info is None:
+                re_user_info = "MoWaS"
+            else:
+                if "Katwarn" not in re_user_info:
+                    re_user_info = str(re_user_info) + ", MoWaS"
+            Database.execute_db("Update users SET warnings = '{}' WHERE chatid={}".format(re_user_info, chat_id),
+                                "warn.db")
+            msg_keyboard = [
+                ["Unwetterwarnungen (DE)", "Hochwasser"],
+                ["Polizeimeldungen", "MoWaS"],
+                ["Biwapp", "Katwarn"],
+                ["Alle Warnmeldungen (empfohlen)"],
+                ["Fertig"]
+            ]
+
+            self.send_msg_keyboard(chat_id,
+                                   "Aktuelle gespeichert: {}\n\nWeitere Warnmeldungsarten?".format(re_user_info),
+                                   msg_keyboard)
+        elif "Fertig" in text:
+            msg_keyboard = [
+                ["Help", "Verhalten Tipps"], ["Notrufnummern"]
+            ]
+            self.send_msg_keyboard(chat_id,
+                                   "&#9989; Setup abgeschlossen! \n Das Setup kann jederzeit neu gestartet werden durch /start",
+                                   msg_keyboard, False)
+
+
         elif "Alle Warnmeldungen" in text:
+            Database.execute_db("Update users SET warnings = 'Alle' WHERE chatid={}".format(chat_id), "warn.db")
             msg_keyboard = [
                 ["Help", "Verhalten Tipps"], ["Notrufnummern"]
             ]
@@ -424,7 +571,13 @@ class TelegramBot:
         elif text == "/stop":
             return "&#9989; Dienst wurde pausiert."
         elif text == "/abmelden":
-            return "&#9989; Sie wurden aus der Datenbank gelöscht. Ab sofort erhalten Sie keine weiteren Meldungen mehr!\nHoffentlich bis bald!"
+            Database.execute_db("DELETE FROM users WHERE chatid = {}".format(chat_id), "warn.db")
+            self.send_msg_keyboard(chat_id,
+                                   "&#9989; Setup abgeschlossen! \n Das Setup kann jederzeit neu gestartet werden durch /start",
+                                   [
+                                       ["/start"]
+                                   ], True)
+            #return "&#9989; Sie wurden aus der Datenbank gelöscht. Ab sofort erhalten Sie keine weiteren Meldungen mehr!\nHoffentlich bis bald!"
         elif text == "/help" or text == "Help":
             return "/stop (Pausieren des Dienstes)\n" \
                    "/abmelden (Austrag aus dem Dienst)\n" \
@@ -496,24 +649,31 @@ class TelegramBot:
             c.execute("SELECT DISTINCT(titel) from notfalltipps WHERE kategorie2='{}'".format(text))
             results_title = c.fetchall()
 
-            if len(results_kat2) > 0:
+            c.execute("SELECT inhalt from notfalltipps WHERE titel='{}'".format(text))
+            result_inhalt = c.fetchall()
+            if len(result_inhalt) > 0:
+                self.send_message(chat_id, result_inhalt[0][0])
+            elif len(results_kat2) > 0:
                 msg_keyboard = self.generate_keyboard(results_kat2)
                 self.send_msg_keyboard(chat_id,
                                        "Wähle eine Option aus:",
                                        msg_keyboard, False)
+                print(results_kat2)
             elif len(results_title) > 0:
 
                 msg_keyboard = self.generate_keyboard(results_title)
                 self.send_msg_keyboard(chat_id,
                                        "Wähle eine Option aus:",
                                        msg_keyboard, False)
+                print(results_title)
             else:
-                c.execute("SELECT inhalt from notfalltipps WHERE titel='{}'".format(text))
-                result_inhalt = c.fetchall()
-                if len(result_inhalt) > 0:
-                    self.send_message(chat_id, result_inhalt[0][0])
-                else:
-                    return "&#10060; Fehler: Diese Nachricht konnte nicht verarbeitet werden. Möglicherweise wurde ich nicht für die gewünschte Aktion entwickelt. \n \n Mit <b>/help</b> werden alle Funktionen angezeigt."
+                #c.execute("SELECT inhalt from notfalltipps WHERE titel='{}'".format(text))
+                #result_inhalt = c.fetchall()
+                #if len(result_inhalt) > 0:
+                #    self.send_message(chat_id, result_inhalt[0][0])
+                #else:
+               print(replay_key)
+               return "&#10060; Fehler: Diese Nachricht konnte nicht verarbeitet werden. Möglicherweise wurde ich nicht für die gewünschte Aktion entwickelt. \n \n Mit <b>/help</b> werden alle Funktionen angezeigt."
 
     def generate_keyboard(self, array):
         """
@@ -560,6 +720,10 @@ class TelegramBot:
                 user_id = message["from"]["id"]
                 chat_id = message["chat"]["id"]
                 fname = message["from"]["first_name"]
+                if "reply_markup" in message:
+                    reply_markup = message["reply_markup"]["keyboard"]
+                else:
+                    reply_markup = None
                 u = Users(user_id)
 
                 if u.check_user(user_id):
@@ -591,7 +755,12 @@ class TelegramBot:
             self.logger.info("Received message from user %s in chat %s: %s", user_id, chat_id, text)
 
             # Textnachricht wird analysiert und gegen bekannte Befehle geprüft
-            msg = self.analyse_message(fname, chat_id, text)
+            if reply_markup is None:
+                print(reply_markup)
+                msg = self.analyse_message(fname, chat_id, text)
+            else:
+                print(reply_markup)
+                msg = self.analyse_message(fname, chat_id, text, reply_markup)
 
             # Wenn es kein return-Wert gibt. Kommt z.B beim Setup vor.
             if msg is None:

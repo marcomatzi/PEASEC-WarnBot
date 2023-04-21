@@ -10,6 +10,8 @@ from tkinter import messagebox
 import urllib
 
 import customtkinter
+
+import db_functions
 from db_functions import Database
 import telegram_api
 import configparser
@@ -24,7 +26,7 @@ class ToplevelWindow(customtkinter.CTkToplevel):
         config = configparser.ConfigParser()
         config.read("config.ini")
         self.config_telegram = config["TelegramAPI"]
-        self.geometry("900x500")
+        self.geometry("900x550")
         self.title("Warnmeldungen Evaluieren - Bachelorthesis Marco Matissek")
         # self.grid_columnconfigure(1, weight=1)
         self.grid_columnconfigure((0, 1, 2, 3), weight=1)
@@ -34,13 +36,6 @@ class ToplevelWindow(customtkinter.CTkToplevel):
                                                font=("Arial", 30),
                                                text_color="#4a97cf")
         self.headline.grid(row=0, column=0, padx=20, pady=(20, 20), columnspan=4, sticky="nesw")
-
-        # TODO: Userform erstellen
-        # TODO: Senden an einzelpersonen und an Gruppen -> Auswahl über ein Dropdown und Radio-Buttons
-        # TODO: Warnmeldung auswählen und noch verändern können
-        # TODO: Custom Text senden
-        # TODO: Anrede auswählen können
-        # TODO: ...
 
         # Inputs
         ## Variablen
@@ -68,49 +63,61 @@ class ToplevelWindow(customtkinter.CTkToplevel):
 
         self.cb_users = customtkinter.CTkComboBox(master=self,
                                                   values=['Wähle eine Option'],
-                                                  width=250, state="disabled")
+                                                  width=250, state="disabled",
+                                                  command=self.cb_users_event)
         self.cb_users.grid(row=3, column=1, padx=(20, 0), pady=(5, 0), sticky="nw", columnspan=2)
+        self.lbl_userinfo = customtkinter.CTkLabel(self, text="User Info:")
+        self.lbl_userinfo.grid(row=4, column=0, padx=(20, 0), pady=(0, 0), sticky="nw")
+        self.lbl_userlangLoc = customtkinter.CTkLabel(self, text="", anchor="ne", justify="left")
+        self.lbl_userlangLoc.grid(row=4, column=1, padx=(20, 0), pady=(0, 0), sticky="nw")
+        self.lbl_userwarn = customtkinter.CTkLabel(self, text="", anchor="ne", justify="left")
+        self.lbl_userwarn.grid(row=4, column=2, padx=(20, 0), pady=(0, 0), sticky="nw")
+
 
         ### Sektion 2: Anrede (Persönlichkeit des Bots)
         self.lbl_anrede = customtkinter.CTkLabel(self, text="Persönlichkeit (Anrede)", fg_color="#A5A4A5",
                                                  text_color="white")
-        self.lbl_anrede.grid(row=4, column=0, padx=(20, 0), pady=(20, 0), sticky="nesw", columnspan=3)
+        self.lbl_anrede.grid(row=5, column=0, padx=(20, 0), pady=(20, 0), sticky="nesw", columnspan=3)
         self.lbl_sendenan = customtkinter.CTkLabel(self, text="Wähle:")
-        self.lbl_sendenan.grid(row=5, column=0, padx=(20, 0), pady=(0, 0), sticky="nw")
+        self.lbl_sendenan.grid(row=6, column=0, padx=(20, 0), pady=(0, 0), sticky="nw")
         self.radiobutton_3 = customtkinter.CTkRadioButton(master=self,
                                                           text="Persönlich (Username) \n(z.B.: Hallo ***,)",
                                                           command=self.radio_anrede_event,
                                                           variable=self.radio_anrede,
                                                           value=1)
-        self.radiobutton_3.grid(row=5, column=1, padx=(20, 0), pady=(5, 0), sticky="nw", columnspan=1)
+        self.radiobutton_3.grid(row=6, column=1, padx=(20, 0), pady=(5, 0), sticky="nw", columnspan=1)
         self.radiobutton_4 = customtkinter.CTkRadioButton(master=self, text="Allgemein (Anrede vermeiden)",
                                                           command=self.radio_anrede_event,
                                                           variable=self.radio_anrede,
                                                           value=2)
-        self.radiobutton_4.grid(row=5, column=2, padx=(20, 0), pady=(5, 0), sticky="nw", columnspan=1)
-
+        self.radiobutton_4.grid(row=6, column=2, padx=(20, 0), pady=(5, 0), sticky="nw", columnspan=1)
+        self.txtb_anrede = customtkinter.CTkEntry(master=self,
+                                               placeholder_text="[username] verwenden um den Benutzername zu füllen", height=25,
+                                               width=500, border_width=2, corner_radius=10)
+        self.txtb_anrede.grid(row=7, column=1, padx=(20, 0), pady=(5, 0), sticky="nw", columnspan=2)
+        self.txtb_anrede.insert(0, "Hallo [username],")
         ### Sektion 3: Warnmeldung
         # TODO: Aktivieren, ansonsten nur Plaintext senden
         self.lbl_sendmsg = customtkinter.CTkLabel(self, text="Warnmeldung", fg_color="#A5A4A5",
                                                   text_color="white")
-        self.lbl_sendmsg.grid(row=6, column=0, padx=(20, 0), pady=(20, 0), sticky="nesw", columnspan=3)
+        self.lbl_sendmsg.grid(row=8, column=0, padx=(20, 0), pady=(20, 0), sticky="nesw", columnspan=3)
         self.lbl_waehlen = customtkinter.CTkLabel(self, text="Wähle:")
-        self.lbl_waehlen.grid(row=7, column=0, padx=(20, 0), pady=(0, 0), sticky="nw")
+        self.lbl_waehlen.grid(row=9, column=0, padx=(20, 0), pady=(0, 0), sticky="nw")
         self.radiobutton_5 = customtkinter.CTkRadioButton(master=self, text="Warnmeldung",
                                                           command=self.radiobutton_msg_event,
                                                           variable=self.radio_msg,
                                                           value=1)
-        self.radiobutton_5.grid(row=7, column=1, padx=(20, 0), pady=(5, 0), sticky="nw", columnspan=1)
+        self.radiobutton_5.grid(row=9, column=1, padx=(20, 0), pady=(5, 0), sticky="nw", columnspan=1)
         self.radiobutton_6 = customtkinter.CTkRadioButton(master=self, text="Textnachricht",
                                                           command=self.radiobutton_msg_event,
                                                           variable=self.radio_msg,
                                                           value=2)
-        self.radiobutton_6.grid(row=7, column=2, padx=(20, 0), pady=(5, 0), sticky="nw", columnspan=1)
+        self.radiobutton_6.grid(row=9, column=2, padx=(20, 0), pady=(5, 0), sticky="nw", columnspan=1)
         # Entry
         self.txtb_msg = customtkinter.CTkEntry(master=self,
                                                placeholder_text="Schreibe eine Nachricht...", height=25,
                                                width=500, border_width=2, corner_radius=10)
-        self.txtb_msg.grid(row=8, column=1, padx=(20, 0), pady=(5, 0), sticky="nw", columnspan=3)
+        self.txtb_msg.grid(row=10, column=1, padx=(20, 0), pady=(5, 0), sticky="nw", columnspan=3)
 
         # Warnmeldung
         cat = Database.get_query("warning_information")
@@ -124,12 +131,12 @@ class ToplevelWindow(customtkinter.CTkToplevel):
                                                    values=arr_cat,
                                                    width=150, state="normal",
                                                    command=self.cb_filter_event)
-        self.cb_filter.grid(row=8, column=0, padx=(20, 0), pady=(0, 0), sticky="nw", columnspan=1)
+        self.cb_filter.grid(row=10, column=0, padx=(20, 0), pady=(0, 0), sticky="nw", columnspan=1)
 
         self.cb_warnmeldung = customtkinter.CTkComboBox(master=self,
                                                         values=['Wähle eine Option'],
                                                         width=500, state="disabled")
-        self.cb_warnmeldung.grid(row=8, column=1, padx=(20, 0), pady=(5, 0), sticky="nw", columnspan=2)
+        self.cb_warnmeldung.grid(row=10, column=1, padx=(20, 0), pady=(5, 0), sticky="nw", columnspan=2)
 
         self.btn_edit = customtkinter.CTkButton(master=self, fg_color="transparent",
                                                 border_width=2,
@@ -138,18 +145,18 @@ class ToplevelWindow(customtkinter.CTkToplevel):
                                                     self.cb_warnmeldung.get().split(":")[0],
                                                     self.cb_warnmeldung.get().split("Version:")[1]),
                                                 text="Bearbeiten")
-        self.btn_edit.grid(row=10, column=2, padx=(20, 0), pady=(20, 20), sticky="nw")
+        self.btn_edit.grid(row=11, column=2, padx=(20, 0), pady=(20, 20), sticky="nw")
 
         self.checkbox = customtkinter.CTkCheckBox(master=self, text="Neuste Version", command=self.checkbox_event,
                                                   variable=self.check_var, onvalue="on", offvalue="off")
-        self.checkbox.grid(row=9, column=1, padx=(20, 0), pady=(5, 0), sticky="nw", columnspan=1)
+        self.checkbox.grid(row=11, column=1, padx=(20, 0), pady=(5, 0), sticky="nw", columnspan=1)
         ### Sektion 4: Buttons
         self.btn_send = customtkinter.CTkButton(master=self, fg_color="transparent",
                                                 border_width=2,
                                                 text_color=("gray10", "#DCE4EE"),
                                                 command=self.send_warning,
                                                 text="Senden")
-        self.btn_send.grid(row=10, column=2, padx=(20, 0), pady=(20, 20), sticky="se")
+        self.btn_send.grid(row=12, column=2, padx=(20, 0), pady=(20, 20), sticky="se")
 
         # Init
         self.radiobutton_1.select()
@@ -168,6 +175,28 @@ class ToplevelWindow(customtkinter.CTkToplevel):
     def checkbox_event(self):
         pass
         # print("checkbox toggled, current value:", self.check_var.get())
+
+    def cb_users_event(self, choice):
+        choice_id = choice.split(":", 1)[0]
+        res = db_functions.Database.get_query("users", "uid={}".format(choice_id))
+        self.lbl_userlangLoc.configure(text="Sprache: {} \nStandort: {}".format(res[0][3], res[0][7]))
+        str_warnmeldungen = res[0][4]
+        # 60 Zeichen aber 60-15 Zeichen wegen "Warnmeldungen: "
+        var1 = "None"
+        if str_warnmeldungen is not None and len(str_warnmeldungen) > 45:
+            last_comma_index = str_warnmeldungen[:45].rfind(",")
+            if last_comma_index != -1:
+                var1 = str_warnmeldungen[:last_comma_index]
+                var2 = str_warnmeldungen[last_comma_index + 1:]
+            else:
+                var1 = str_warnmeldungen[:45]
+                var2 = str_warnmeldungen[45:]
+        else:
+            var1 = str_warnmeldungen
+            var2 = ""
+
+        var1 = str(var1) + "\n" + str(var2)
+        self.lbl_userwarn.configure(text="Warnmeldungen: {}".format(var1))
 
     def cb_filter_event(self, choice):
         results = Database.get_query("warning_information", "wid like '{}%'".format(choice))
@@ -206,9 +235,9 @@ class ToplevelWindow(customtkinter.CTkToplevel):
             """
             self.cb_warnmeldung.configure(state="normal")
             self.txtb_msg.configure(state="disabled")
-            self.btn_edit.grid(row=9, column=2, padx=(20, 0), pady=(20, 20), sticky="nw")
-            self.cb_warnmeldung.grid(row=8, column=1, padx=(20, 0), pady=(5, 0), sticky="nw", columnspan=2)
-            self.cb_filter.grid(row=8, column=0, padx=(20, 0), pady=(0, 0), sticky="nw", columnspan=1)
+            self.btn_edit.grid(row=11, column=2, padx=(20, 0), pady=(20, 20), sticky="nw")
+            self.cb_warnmeldung.grid(row=10, column=1, padx=(20, 0), pady=(5, 0), sticky="nw", columnspan=2)
+            self.cb_filter.grid(row=10, column=0, padx=(20, 0), pady=(0, 0), sticky="nw", columnspan=1)
             self.txtb_msg.grid_forget()
 
             results = Database.get_query("warning_information")
@@ -227,7 +256,7 @@ class ToplevelWindow(customtkinter.CTkToplevel):
             self.cb_warnmeldung.grid_forget()
             self.cb_filter.grid_forget()
             self.cb_warnmeldung.configure(state="disabled")
-            self.txtb_msg.grid(row=8, column=1, padx=(20, 0), pady=(5, 0), sticky="nw", columnspan=2)
+            self.txtb_msg.grid(row=10, column=1, padx=(20, 0), pady=(5, 0), sticky="nw", columnspan=2)
         else:
             self.txtb_msg.configure(state="disabled")
             self.cb_warnmeldung.configure(state="disabled")
@@ -235,7 +264,7 @@ class ToplevelWindow(customtkinter.CTkToplevel):
 
     def send_warning(self):
         user = []
-
+        phase = self.txtb_anrede.get()
         if self.radio_sendto.get() == 1:
             str_usn = self.cb_users.get().split(": ")[1]
             username = str_usn.split("(")[0]
@@ -271,7 +300,7 @@ class ToplevelWindow(customtkinter.CTkToplevel):
             elif self.cb_warnmeldung.cget("state") == "normal":
                 # print(personal_anrede)
                 if self.checkbox.get() == "on":
-                    tb.send_warnings(self.cb_warnmeldung.get().split(":")[0], "", u[1], personal_anrede)
+                    tb.send_warnings(self.cb_warnmeldung.get().split(":")[0], "", u[1], personal_anrede, phase)
                 else:
                     tb.send_warnings(self.cb_warnmeldung.get().split(":")[0],
-                                     self.cb_warnmeldung.get().split("Version: ")[1], u[1], personal_anrede)
+                                     self.cb_warnmeldung.get().split("Version: ")[1], u[1], personal_anrede, phase)
