@@ -559,13 +559,21 @@ class App(customtkinter.CTk):
         self.txtb_group = customtkinter.CTkComboBox(master=self.five_frame, values=UserGroup().get_all_groups(),
                                                     width=200)
         self.txtb_group.grid(row=4, column=3, padx=(0, 0), pady=(0, 0), sticky="nw", columnspan=1)
-        """self.txtb_group = customtkinter.CTkEntry(master=self.five_frame,
-                                                 placeholder_text="Wähle einen User",
-                                                 width=200,
-                                                 height=25,
-                                                 border_width=2,
-                                                 corner_radius=10)
-        self.txtb_group.grid(row=4, column=3, padx=(0, 0), pady=(5, 0), sticky="nw", columnspan=1)"""
+
+        self.txtb_wartungstypen = customtkinter.CTkEntry(master=self.five_frame,
+                                                placeholder_text="Wähle einen User",
+                                                width=200,
+                                                height=25,
+                                                border_width=2,
+                                                corner_radius=10)
+        self.txtb_wartungstypen.grid(row=5, column=1, padx=(0, 0), pady=(5, 0), sticky="nw", columnspan=1)
+        self.txtb_location = customtkinter.CTkEntry(master=self.five_frame,
+                                                         placeholder_text="Wähle einen User",
+                                                         width=200,
+                                                         height=25,
+                                                         border_width=2,
+                                                         corner_radius=10)
+        self.txtb_location.grid(row=5, column=3, padx=(0, 0), pady=(5, 0), sticky="nw", columnspan=1)
 
         ## Buttons
         self.five_frame_button_del = customtkinter.CTkButton(self.five_frame, corner_radius=10, height=40,
@@ -575,7 +583,7 @@ class App(customtkinter.CTk):
                                                              anchor="w",
                                                              state="disabled",
                                                              command=lambda: self.del_user(u.get_all_users()))
-        self.five_frame_button_del.grid(row=8, column=3, sticky="nw", padx=(10, 0), columnspan=2)
+        self.five_frame_button_del.grid(row=9, column=3, sticky="nw", padx=(10, 0), columnspan=2)
 
         self.five_frame_button_edit = customtkinter.CTkButton(self.five_frame, corner_radius=10, height=40,
                                                               border_spacing=10, text="Benutzer bearbeiten",
@@ -583,7 +591,7 @@ class App(customtkinter.CTk):
                                                               hover_color=("#69AF3F", "#8BE554"),
                                                               anchor="w",
                                                               command=self.edit_user, state="disabled")
-        self.five_frame_button_edit.grid(row=8, column=0, sticky="ne", columnspan=2)
+        self.five_frame_button_edit.grid(row=9, column=0, sticky="ne", columnspan=2)
 
         ## Labels
         self.five_frame.second_label = customtkinter.CTkLabel(self.five_frame, text="Wähle User:")
@@ -602,6 +610,8 @@ class App(customtkinter.CTk):
         self.five_frame.lbl_group.grid(row=4, column=2, padx=(20, 0), pady=(0, 0), sticky="nw")
         self.five_frame.lbl_warnings = customtkinter.CTkLabel(self.five_frame, text="Wartungsarten:")
         self.five_frame.lbl_warnings.grid(row=5, column=0, padx=(20, 0), pady=(0, 0), sticky="nw")
+        self.five_frame.lbl_warnings = customtkinter.CTkLabel(self.five_frame, text="Standort:")
+        self.five_frame.lbl_warnings.grid(row=5, column=2, padx=(20, 0), pady=(0, 0), sticky="nw")
 
         """
             Gruppen Frame
@@ -924,23 +934,29 @@ class App(customtkinter.CTk):
             self.combobox_users.configure(state="disabled")
             self.txtb_Name.configure(state="normal")
             self.txtb_lang.configure(state="normal")
+            self.txtb_location.configure(state="normal")
             self.txtb_group.configure(state="normal")
+            self.txtb_wartungstypen.configure(state="normal")
 
         else:
             ## Setze alles auf disable
             self.combobox_users.configure(state="normal")
             self.txtb_Name.configure(state="disabled")
             self.txtb_lang.configure(state="disabled")
+            self.txtb_location.configure(state="disabled")
             self.txtb_group.configure(state="disabled")
+            self.txtb_wartungstypen.configure(state="disabled")
 
             ## Aktionen
-            data = [None] * 6
+            data = [None] * 8
             data[0] = int(self.txtb_id.get())
             data[1] = self.txtb_Name.get()
             data[2] = self.txtb_lang.get()
             data[3] = None  # self.txtb_warnings.get()
             substring_gnr = self.txtb_group.get().split(":", 1)[0]
             data[4] = substring_gnr
+            data[5] = self.txtb_wartungstypen.get()
+            data[6] = self.txtb_location.get()
 
             u.edit_user(data)
 
@@ -961,12 +977,17 @@ class App(customtkinter.CTk):
         self.txtb_group.configure(state="normal")
         self.five_frame_button_del.configure(state="normal")
         self.five_frame_button_edit.configure(state="normal")
+        self.txtb_wartungstypen.configure(state="normal")
+        self.txtb_location.configure(state="normal")
 
         self.txtb_id.delete(0, customtkinter.END)
         self.txtb_Name.delete(0, customtkinter.END)
         self.txtb_ChatID.delete(0, customtkinter.END)
         self.txtb_UID.delete(0, customtkinter.END)
         self.txtb_lang.delete(0, customtkinter.END)
+        self.txtb_location.delete(0, customtkinter.END)
+        self.txtb_wartungstypen.delete(0, customtkinter.END)
+
         # self.txtb_group.delete(0, customtkinter.END)
 
         ## Daten aus der DB einlesen
@@ -980,6 +1001,8 @@ class App(customtkinter.CTk):
         self.txtb_ChatID.insert(0, str(result[5]))
         self.txtb_UID.insert(0, str(result[1]))
         self.txtb_lang.insert(0, str(result[3]))
+        self.txtb_wartungstypen.insert(0, str(result[4]))
+        self.txtb_location.insert(0, str(result[7]))
         self.txtb_group.set(str(result[6]))
 
         ## Setze alles auf disable
@@ -989,7 +1012,8 @@ class App(customtkinter.CTk):
         self.txtb_UID.configure(state="disabled")
         self.txtb_lang.configure(state="disabled")
         self.txtb_group.configure(state="disabled")
-
+        self.txtb_wartungstypen.configure(state="disabled")
+        self.txtb_location.configure(state="disabled")
         # print(results)
 
     def combobox_callback_warnings(self, choice, ver=None):
