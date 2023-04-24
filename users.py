@@ -53,7 +53,7 @@ class Users:
         :return:
         """
         query = "DELETE FROM users WHERE id={}".format(id)
-        self.db.execute_db(query, "warn.db")
+        self.db.execute_db(query, self.config_db['PATH'])
         self.logger.info("[DELETE USER] Nutzer wurde erfolgreich mit der ID: %s gelöscht!", self.uid)
 
     def edit_user(self, data):
@@ -77,7 +77,7 @@ class Users:
                     data[1], data[2],
                     data[4], data[6], data[5], data[0])
         print(query)
-        self.db.execute_db(query, "warn.db")
+        self.db.execute_db(query, self.config_db['PATH'])
         self.logger.info("[UPDATE USER] Nutzer wurde erfolgreich mit der ID: %s geupdated!", self.uid)
 
     def get_user_info(self, uid):
