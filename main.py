@@ -1,3 +1,4 @@
+import configparser
 import tkinter as tk
 
 import UI
@@ -11,7 +12,11 @@ telegram_api = None
 
 def main():
     global telegram_api
-    telegram_api = "5979163637:AAFsR0MwfvPb9FwB2oPQKPQJlnkmkcZmKmg"
+    config = configparser.ConfigParser()
+    config.read("config.ini")
+    config_telegram = config["TelegramAPI"]
+
+    telegram_api = config_telegram["KEY"]
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
     bot = TelegramBot(telegram_api, app)
 
@@ -28,8 +33,12 @@ def main():
         # Updates im json der Warn-API / DB
 
 def start_collector():
-    server = f'https://warnung.bund.de/api31'
-    db = "warn.db"
+    config = configparser.ConfigParser()
+    config.read("config.ini")
+    config_db = config["Datenbank"]
+    config_warn = config["WarnAppsAPI"]
+    server = config_warn['NINA']
+    db = config_db['PATH']
     c = Collector(server, db)
     c.catch_warnings(None)
 
