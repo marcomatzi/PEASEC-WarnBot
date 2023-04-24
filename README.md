@@ -79,6 +79,9 @@ In der config.ini sind alle relevanten Einstellungen hinterlegt. Dort können ei
 #### Wie kann ich eine andere DB verwenden?
 Sie können über die init.py eine leere Datenbank erstellen. Dazu einfach in der confi.ini, im Abschnitt [Datenbank], einen neuen Namen bei PATH hinterlegen.
 
+#### Wo kann ich das Intervall für die NINA-API ändern?
+In der confi.ini im Abschnitt [WarnAppsAPI] und dann INTERVALL. Die Angabe bezieht sich auf Sekunden.
+
 
 
 ## Used By
