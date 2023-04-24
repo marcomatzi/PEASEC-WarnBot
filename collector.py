@@ -142,7 +142,7 @@ class Collector:
                 else:
                     print(response.status_code)
 
-            time.sleep(self.config_warn['INTERVALL'])  # Excecute every 59sec + 1sec startup time (every 60 sec checker)
+            time.sleep(int(self.config_warn['INTERVALL']))  # Excecute every 59sec + 1sec startup time (every 60 sec checker)
             #time.sleep(59)  # Excecute every 59sec + 1sec startup time (every 60 sec checker)
 
     def process_information(self, updates):

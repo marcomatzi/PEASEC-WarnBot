@@ -33,6 +33,7 @@ class App(customtkinter.CTk):
         config = configparser.ConfigParser()
         config.read("config.ini")
         self.config_db = config["Datenbank"]
+        self.config_telegram = config["TelegramAPI"]
 
         tb = telegram_api.TelegramBot(token, self)
 
@@ -1396,7 +1397,7 @@ class App(customtkinter.CTk):
             text_in_klammern = match.group(1)
         wid = text_in_klammern
         user = ""           # ChatID hinterlegen
-        tb = telegram_api.TelegramBot("5979163637:AAFsR0MwfvPb9FwB2oPQKPQJlnkmkcZmKmg", self)
+        tb = telegram_api.TelegramBot(self.config_telegram['KEY'], self)
         tb.send_warnings(wid, "", user)
 
     def send_all_fnc(self):
@@ -1408,7 +1409,7 @@ class App(customtkinter.CTk):
         txt = self.home_entry.get()
         print(str(txt))
         txt = self.replace_tags(txt)
-        tb = telegram_api.TelegramBot("5979163637:AAFsR0MwfvPb9FwB2oPQKPQJlnkmkcZmKmg", self)
+        tb = telegram_api.TelegramBot(self.config_telegram['KEY'], self)
         tb.send_multiple_message(txt, "chatid = 784506299")
 
         self.home_entry.delete(0, len(txt))
@@ -1447,5 +1448,5 @@ class App(customtkinter.CTk):
 #    app.mainloop()
 
 """if __name__ == "__main__":
-    app = App("5979163637:AAFsR0MwfvPb9FwB2oPQKPQJlnkmkcZmKmg")
+    app = App("BOT_KEY")
     app.mainloop()"""
