@@ -1,5 +1,5 @@
 
-![Logo](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/th5xamgrr6se0x5ro4g6.png)
+![Logo](https://raw.githubusercontent.com/marcomatzi/PEASEC-WarnBot/main/images/logo_f.png)
 
 # PEASEC-WarnBot
 Implementation meiner Bachelorarbeit - WarnBot Implementierung in Telegram (IM) mit Verwendung der TelegramAPI. Sendet Warnmeldungen an den Nutzer per Direktnachricht in Telegram, wie beispielsweise Krieg und Katastrophen, sondern auch Kriminalitäts-, Verkehrs-, Gesundheits- und Wetterwarnungen.
@@ -19,7 +19,9 @@ Dieses Tool ist kein vollimplementierter Bot, sondern dient zu Evaluierungszweck
         - Versenden an Einzelperson oder Gruppe
         - Warnmeldung auswählen und bearbeiten
     - Versenden von Text
-- Einsehen von Ein- und Ausgehenden Nachrichten
+- Einsehen von Ein- und Ausgehenden Nachrichten (gefiltert)
+- Ausgeben von Notfallnummern
+- Ausgeben von Notfalltipps
 - Befehle im Chat
 - Tastatur im Chat
 
@@ -32,33 +34,37 @@ Dieses Tool ist kein vollimplementierter Bot, sondern dient zu Evaluierungszweck
 Nein.
 
 #### Welche Benutzerdaten sammelt der Bot?
-Der Bot sammelt nur UserID, ChatID und Username.
+Der Bot sammelt nur UserID, ChatID und Username. Im Setup kann der User noch Warnmeldungsarten und eine/n Ort/Region hinterlegen.
 
 #### Welche Schnittstelle für zu Telegram genutzt?
 Der Bot nutzt die URLs der API. Es wurde auf die Nutzung der TelegramBot-PY verzichtet.
 
+#### Wo kann ich die DB und den Bot-KEY ändern?
+In der config.ini sind alle relevanten Einstellungen hinterlegt. Dort können einfach die aktuellen Daten des Bots eingespeichert werden.
+
 
 ## Installation
 
-Installation der Webseite benötigt man 
-- PHP
-- Apache
-- MySQL / andere SQL
-- WordPress API
+Das Programm wurde mit Python 3.9 Entwickelt und getestet
 
-INIT SQL:
+Laden Sie das Repository herunter oder klonen Sie es mit Git.
 ```php
-  DB.sql in MySQL Einfügen und ausführen
+  git clone https://github.com/marcomatzi/PEASEC-WarnBot.git
 ```
-Template in Pfad einfügen:
+Installieren Sie die erforderlichen Pakete mit pip.
 ```php
-  wp-content/themes/
+  pip install -r requirements.txt
 ```    
-
-theme-update-checker.php - Wird mit der Version im style.css abgeglichen
+Programm ausführen mit
 ```php
-  23  public $metadataUrl = 'URL/info.json';        //The URL of the theme's metadata file.
-```    
+  python main.py
+```   
+\
+INFO:\
+Falls Sie die warn.db nicht verwenden möchten, können Sie die aus dem Ordner löschen oder Umbenenn und eine neue Generieren mit:
+```php
+  python init.py
+```  
 ## Used By
 
 Das Projekt wird von folgenden Unternehmen/Gruppen genutzt:
