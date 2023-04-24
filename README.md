@@ -16,7 +16,7 @@ Dieses Tool ist kein vollimplementierter Bot, sondern dient zu Evaluierungszweck
 - Versenden von Warnmeldungen über einen Telegram-Bot
     - Parameter für Evaluierung
         - Persönlichkeit des Bots (Anrede)
-        - Versenden an Einzelperson oder Gruppe
+        - Versenden an Einzelperson oder Gruppen
         - Warnmeldung auswählen und bearbeiten
     - Versenden von Textnachrichten
 - Einsehen von ein- und ausgehenden Nachrichten (gefiltert)
@@ -27,24 +27,11 @@ Dieses Tool ist kein vollimplementierter Bot, sondern dient zu Evaluierungszweck
 
 
 
-## FAQ
-
-#### Kann der Bot Warnmeldungen automatisch versenden?
-Nein.
-
-#### Welche Benutzerdaten sammelt der Bot?
-Der Bot sammelt nur UserID, ChatID und Username. Im Setup kann der User noch Warnmeldungsarten und eine/n Region/Ort hinterlegen.
-
-#### Welche Schnittstelle von Telegram wird genutzt?
-Der Bot nutzt die URLs der API. Es wurde auf die Nutzung der TelegramBot-PY verzichtet.
-
-#### Wo kann ich die DB und den Bot-KEY ändern?
-In der config.ini sind alle relevanten Einstellungen hinterlegt. Dort können einfach die aktuellen Daten des Bots eingespeichert werden.
-
-
 ## Installation
 
 Das Programm wurde in Python 3.9 entwickelt und getestet.
+
+Um den WarnBot in Telegram zu verwenden, muss im Vorfeld ein Bot über den Botfather (https://telegram.me/BotFather) erstellt werden. Der Botfather ist ein Service, der die Erstellung von Bots in Telegram vereinfacht.
 
 Laden Sie das Repository herunter oder klonen Sie es mit Git.
 ```php
@@ -67,10 +54,33 @@ Programm ausführen mit
 ```   
 \
 INFO:\
-Falls Sie die warn.db nicht verwenden möchten, können Sie diese aus dem Ordner löschen oder umbenennen und eine neue generieren mit:
+Falls Sie eine neue Datenbank verwenden möchten, ohne Inhalt, können Sie die bestehende *.db löschen und den folgenden Befehl auführen.
 ```php
   python init.py
 ```  
+Damit wird eine neue Datenbank erstellt, mit dem Namen aus der config.ini (Abschnitt Datenbank: PATH)
+Wichtig: init.py muss vor der main.py ausgeführt werden.
+
+
+## FAQ
+
+#### Kann der Bot Warnmeldungen automatisch versenden?
+Nein.
+
+#### Welche Benutzerdaten sammelt der Bot?
+Der Bot sammelt nur UserID, ChatID und Username. Im Setup kann der User noch Warnmeldungsarten und eine/n Region/Ort hinterlegen.
+
+#### Welche Schnittstelle von Telegram wird genutzt?
+Der Bot nutzt die URLs der API. Es wurde auf die Nutzung der TelegramBot-PY verzichtet.
+
+#### Wo kann ich den Bot-KEY ändern?
+In der config.ini sind alle relevanten Einstellungen hinterlegt. Dort können einfach die aktuellen Daten des Bots eingespeichert werden. (Abschnitt [TelegramAPI])
+
+#### Wie kann ich eine andere DB verwenden?
+Sie können über die init.py eine leere Datenbank erstellen. Dazu einfach in der confi.ini, im Abschnitt [Datenbank], einen neuen Namen bei PATH hinterlegen.
+
+
+
 ## Used By
 
 Das Projekt wird von folgenden Unternehmen/Gruppen genutzt:
@@ -80,7 +90,7 @@ Das Projekt wird von folgenden Unternehmen/Gruppen genutzt:
 
 ## Support
 
-Für Support, email marco@matissek.com oder [@marcomatzi](https://www.github.com/marcomatzi).
+Für Support email marco@matissek.com oder [@marcomatzi](https://www.github.com/marcomatzi).
 
 
 ## Acknowledgements
