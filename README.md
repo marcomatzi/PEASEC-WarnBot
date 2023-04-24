@@ -1,5 +1,5 @@
 
-![Logo](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/th5xamgrr6se0x5ro4g6.png)
+![Logo]([https://dev-to-uploads.s3.amazonaws.com/uploads/articles/th5xamgrr6se0x5ro4g6.png](https://github.com/marcomatzi/PEASEC-WarnBot/blob/main/images/logo_f.png))
 
 # PEASEC-WarnBot
 Implementation meiner Bachelorarbeit - WarnBot Implementierung in Telegram (IM) mit Verwendung der TelegramAPI. Sendet Warnmeldungen an den Nutzer per Direktnachricht in Telegram, wie beispielsweise Krieg und Katastrophen, sondern auch Kriminalitäts-, Verkehrs-, Gesundheits- und Wetterwarnungen.
