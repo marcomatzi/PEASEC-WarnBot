@@ -1,13 +1,24 @@
+import configparser
+
 from db_functions import Database
 from collector import Collector
+import sqlite3
+
 
 class SetupEnv:
+    """    config = configparser.ConfigParser()
+        config.read("config.ini")
+        config_db = config["Datenbank"]
+        # Verbindung zur Datenbank herstellen (wenn die Datenbank noch nicht existiert, wird sie erstellt)
+        conn = sqlite3.connect(config_db['PATH'])
+
+        # Verbindung schließen
+        conn.close()"""
+
     print("Umgebung wird initialisiert...")
     db = Database()
-    """
-        db.create_db()
+    db.create_db()
     print("Datenbank wurde erstellt!")
-    print("Fertig! Init abgeschlossen...")
 
     sql_list = [
         ('Katwarn', 'kat'),
@@ -19,12 +30,5 @@ class SetupEnv:
         ('Covid', 'Covid')
     ]
     db.insert_multiple(sql_list, "warn.db")
-    """
-    # db.insert_into("Insert into warntype (name, type) values ('Test', 'test')", "warn.db")
-    #db.get_query("warntype")
 
-    db.get_query("warnings")
-    Collector.custom_warning("custom.8477464840_public_topics", "Ich habe durst", "I am thirsty", 1, "low", "Alert", "", "Custom", "Ich brauche ein Getränk.")
-    db.get_query("warnings")
-    # db.delete_query("Delete from warntype where name='Test'", "warn.db")
-    # db.get_query("warntype")
+    print("Fertig! Init abgeschlossen...")

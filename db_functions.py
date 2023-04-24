@@ -25,7 +25,7 @@ class Database:
             raise Exception("This is an exception")
 
         # Verbindung zur Datenbank erzeugen
-        connection = sqlite3.connect("warn.db")
+        connection = sqlite3.connect(config_db['PATH'])
 
         # Datensatz-Cursor erzeugen
         cursor = connection.cursor()
