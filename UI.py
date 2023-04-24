@@ -232,7 +232,7 @@ class App(customtkinter.CTk):
         ## Dropdown
         results = []
         versions = []
-        conn = sqlite3.connect('warn.db')
+        conn = sqlite3.connect(self.config_db['PATH'])
         c = conn.cursor()
         c.execute("SELECT DISTINCT(warnings.wid), warnings.title_de, warnings.last_update, warning_information.wid "
                   "FROM warnings INNER JOIN warning_information WHERE warnings.wid = warning_information.wid GROUP "
@@ -1183,7 +1183,7 @@ class App(customtkinter.CTk):
         :return:
         """
         self.third_frame_ID.configure(state="normal")
-
+        
         self.third_frame_ID.delete(0, customtkinter.END)
         self.third_frame_event.delete(0, customtkinter.END)
         self.third_frame_expires.delete(0, customtkinter.END)
@@ -1197,6 +1197,14 @@ class App(customtkinter.CTk):
         self.third_frame_Sender.delete(0, customtkinter.END)
         self.third_frame_Status.delete(0, customtkinter.END)
         self.third_frame_area.delete(0, customtkinter.END)
+
+        self.third_frame_img.configure(placeholder_text="URL zum Bild")
+        self.third_frame_imgc.configure(placeholder_text="URL zum Bild")
+        self.third_frame_web.configure(placeholder_text="URL zur Webseite")
+        self.third_frame_Sender.configure(placeholder_text="Name des Senders")
+        self.third_frame_Status.configure(placeholder_text="Actual")
+        self.third_frame_area.configure(placeholder_text="Stadt Darmstadt, ....")
+
 
     def save_new_warning(self, cancel_wid=None):
         """
@@ -1411,13 +1419,13 @@ class App(customtkinter.CTk):
         print(str(txt))
         txt = self.replace_tags(txt)
         tb = telegram_api.TelegramBot(self.config_telegram['KEY'], self)
-        tb.send_multiple_message(txt, "chatid = 784506299")
+        tb.send_multiple_message(txt)
 
         self.home_entry.delete(0, len(txt))
 
     def get_dbInfo(self):
         global var_info
-        conn = sqlite3.connect('warn.db')
+        conn = sqlite3.connect(self.config_db['PATH'])
         c = conn.cursor()
 
         c.execute("SELECT COUNT(*) FROM warnings")
