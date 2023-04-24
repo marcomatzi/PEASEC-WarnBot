@@ -2,29 +2,28 @@
 ![Logo](https://raw.githubusercontent.com/marcomatzi/PEASEC-WarnBot/main/images/logo_f.png)
 
 # PEASEC-WarnBot
-Implementation meiner Bachelorarbeit - WarnBot Implementierung in Telegram (IM) mit Verwendung der TelegramAPI. Sendet Warnmeldungen an den Nutzer per Direktnachricht in Telegram, wie beispielsweise Krieg und Katastrophen, sondern auch Kriminalitäts-, Verkehrs-, Gesundheits- und Wetterwarnungen.
+Gemäß meiner Bachelorarbeit habe ich eine Implementierung des WarnBots in Telegram (IM) vorgenommen, wobei die TelegramAPI verwendet wurde. Das Ziel besteht darin, Warnmeldungen zu verschiedenen Themen, einschließlich Krieg und Katastrophen, Kriminalität, Verkehr, Gesundheit und Wetter, per Direktnachricht an den Nutzer zu senden.
 
-Dieses Tool ist kein vollimplementierter Bot, sondern dient zu Evaluierungszwecke.
+Dieses Tool ist kein vollimplementierter Bot, sondern dient zu Evaluierungszwecken.
 
 
 
 ## Features
 
 - Sammeln von Warnmeldungen aus der NINA-API
-- Erstellung von eigenen Warnmeldung (Custom-Warnungen)
-- Erstellen von Benutzergruppen
+- Erstellung von eigenen Warnmeldungn (Custom-Warnungen)
+- Erstellung von Benutzergruppen
 - Versenden von Warnmeldungen über einen Telegram-Bot
     - Parameter für Evaluierung
         - Persönlichkeit des Bots (Anrede)
         - Versenden an Einzelperson oder Gruppe
         - Warnmeldung auswählen und bearbeiten
-    - Versenden von Text
-- Einsehen von Ein- und Ausgehenden Nachrichten (gefiltert)
+    - Versenden von Textnachrichten
+- Einsehen von ein- und ausgehenden Nachrichten (gefiltert)
 - Ausgeben von Notfallnummern
 - Ausgeben von Notfalltipps
 - Befehle im Chat
 - Tastatur im Chat
-
 
 
 
@@ -34,9 +33,9 @@ Dieses Tool ist kein vollimplementierter Bot, sondern dient zu Evaluierungszweck
 Nein.
 
 #### Welche Benutzerdaten sammelt der Bot?
-Der Bot sammelt nur UserID, ChatID und Username. Im Setup kann der User noch Warnmeldungsarten und eine/n Ort/Region hinterlegen.
+Der Bot sammelt nur UserID, ChatID und Username. Im Setup kann der User noch Warnmeldungsarten und eine/n Region/Ort hinterlegen.
 
-#### Welche Schnittstelle für zu Telegram genutzt?
+#### Welche Schnittstelle von Telegram wird genutzt?
 Der Bot nutzt die URLs der API. Es wurde auf die Nutzung der TelegramBot-PY verzichtet.
 
 #### Wo kann ich die DB und den Bot-KEY ändern?
@@ -45,7 +44,7 @@ In der config.ini sind alle relevanten Einstellungen hinterlegt. Dort können ei
 
 ## Installation
 
-Das Programm wurde mit Python 3.9 Entwickelt und getestet
+Das Programm wurde in Python 3.9 entwickelt und getestet.
 
 Laden Sie das Repository herunter oder klonen Sie es mit Git.
 ```php
@@ -68,7 +67,7 @@ Programm ausführen mit
 ```   
 \
 INFO:\
-Falls Sie die warn.db nicht verwenden möchten, können Sie die aus dem Ordner löschen oder Umbenenn und eine neue Generieren mit:
+Falls Sie die warn.db nicht verwenden möchten, können Sie diese aus dem Ordner löschen oder umbenennen und eine neue generieren mit:
 ```php
   python init.py
 ```  
