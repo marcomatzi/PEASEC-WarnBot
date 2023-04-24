@@ -82,6 +82,12 @@ Sie können über die init.py eine leere Datenbank erstellen. Dazu einfach in de
 #### Wo kann ich das Intervall für die NINA-API ändern?
 In der confi.ini im Abschnitt [WarnAppsAPI] und dann INTERVALL. Die Angabe bezieht sich auf Sekunden.
 
+#### In der Datenbank sind keine Notfalltipps vorhanden?
+Führe die Funktion "collect_notfalltipps" in collector.py aus. Diese lädt alle Infos aus der Nina API.
+
+#### Gibt es eine Prefilled Datenbank?
+Ja! Nutze dazu die warn_prefilled.db. Zur Nutzung den Namen in warn.db oder in der condig.ini den Datenbanknamen ändern.
+
 
 
 ## Used By
