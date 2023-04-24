@@ -21,6 +21,7 @@ class Collector:
         config = configparser.ConfigParser()
         config.read("config.ini")
         self.config_warn = config["WarnAppsAPI"]
+        self.config_db = config["Datenbank"]
 
     @staticmethod
     def custom_warning(wid, title_de, title_en, version, severity, type, geo, source, descr):
@@ -41,8 +42,11 @@ class Collector:
         :param descr:
         :return:
         """
+        config = configparser.ConfigParser()
+        config.read("config.ini")
+        config_db = config["Datenbank"]
         db = Database()
-        res = db.check_if_exist("warnings", "warn.db", "wid", wid)
+        res = db.check_if_exist("warnings", config_db['PATH'], "wid", wid)
         if res:
             query = "UPDATE warnings SET version={}, severity='{}', descr ='{}' WHERE wid='{}'".format(version,
                                                                                                        severity, descr,
@@ -51,7 +55,7 @@ class Collector:
             query = "INSERT INTO warnings (wid,title_de,title_en,version,severity,type,geo,source, descr) values ('{}','{}','{}',{},'{}','{}','{}','{}', '{}')".format(
                 wid, title_de, title_en, version, severity, type, geo, source, descr)
 
-        Database.execute_db(query, "warn.db")
+        Database.execute_db(query, config_db['PATH'])
 
     def check_exist_json(self, list_of_files):
         """
@@ -496,7 +500,7 @@ class Collector:
 
 """if __name__ == "__main__":
     server = f'https://warnung.bund.de/api31'
-    db = "warn.db"
+    db = "DB HIER EINSETZEN"    # config_db['PATH']
     c = Collector(server, db)
     c.force_update_info()
 """

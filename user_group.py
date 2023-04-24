@@ -54,7 +54,7 @@ class UserGroup:
         :return:
         """
         query = "DELETE FROM user_groups WHERE group_nr={}".format(gnr)
-        self.db.execute_db(query, "warn.db")
+        self.db.execute_db(query, self.config_db['PATH'])
         self.logger.info("[DEL GROUP] Gruppe mit der Nr. %s wurde erfolgreich gelöscht!", gnr)
 
     def edit_group(self, gnr, descr):
@@ -65,7 +65,7 @@ class UserGroup:
         :return:
         """
         query = "UPDATE user_groups SET group_nr={}, description='{}' WHERE group_nr={}".format(gnr, descr)
-        self.db.execute_db(query, "warn.db")
+        self.db.execute_db(query, self.config_db['PATH'])
         self.logger.info("[DEL GROUP] Gruppe mit der Nr. %s wurde erfolgreich gelöscht!", gnr)
 
     def get_group(self, gnr):
