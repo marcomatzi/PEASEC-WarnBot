@@ -339,7 +339,7 @@ class TelegramBot:
             msg = "&#10071; Der Bot speichert folgende Daten:\n" \
                   "-> Ihre Telegram ID (um Sie identifizieren zu können)\n" \
                   "-> Diese Chat-ID (um Warnmeldungen versenden zu können)\n" \
-                  "-> Ihren Telegram-Namen (um Persönlicher kommunizieren zu können)\n\n" \
+                  "-> Ihren Telegram-Namen (um persönlicher kommunizieren zu können)\n\n" \
                   "Sollten Sie den Einstellungsprozess fortfahren, stimmen Sie dem Speichern zu. Sie können jederzeit mit /abmelden alle Daten löschen!"
             self.send_message(chatid, msg)
             msg = "In welcher Sprache soll der Bot Warnmeldungen zusenden? Bitte die richtige Option auswählen.."
