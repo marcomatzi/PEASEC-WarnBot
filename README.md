@@ -55,6 +55,13 @@ Installieren Sie die erforderlichen Pakete mit pip.
 ```php
   pip install -r requirements.txt
 ```    
+Fügen Sie den BOT-KEY in die config.ini ein.
+```php
+  ...
+  [TelegramAPI]
+    KEY = abc:000
+    ...
+``` 
 Programm ausführen mit
 ```php
   python main.py
@@ -87,7 +94,10 @@ Für Support, email marco@matissek.com oder [@marcomatzi](https://www.github.com
 
 ## Screenshots
 
-![App Screenshot](https://via.placeholder.com/468x300?text=App+Screenshot+Here)
+![App Screenshot](https://raw.githubusercontent.com/marcomatzi/PEASEC-WarnBot/main/screenshots/Screenshot_home.png)
+![App Screenshot](https://raw.githubusercontent.com/marcomatzi/PEASEC-WarnBot/main/screenshots/Screenshot_eval.png)
+![App Screenshot](https://raw.githubusercontent.com/marcomatzi/PEASEC-WarnBot/main/screenshots/Screenshot_usergroup.png)
+![App Screenshot](https://raw.githubusercontent.com/marcomatzi/PEASEC-WarnBot/main/screenshots/Screenshot_warning.png)
 
 
 ## Authors
