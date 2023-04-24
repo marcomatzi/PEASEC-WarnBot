@@ -95,11 +95,12 @@ Für Support email marco@matissek.com oder [@marcomatzi](https://www.github.com/
 
 ## Acknowledgements
 
- - [tkinter](https://de.wordpress.org/download/)
- - [customtkinter](https://www.php.net/)
- - [sqllite3](https://www.mysql.com/de/)
- - [PIL](https://www.mysql.com/de/)
- - [Python](https://www.mysql.com/de/)
+ - [tkinter](https://docs.python.org/3/library/tkinter.html)
+ - [customtkinter](https://github.com/TomSchimansky/CustomTkinter)
+ - [sqllite3](https://sqlite.org/index.html)
+ - [Pillow](https://pillow.readthedocs.io/en/stable/)
+ - [requests](https://pypi.org/project/requests/)
+ - [Python](https://www.python.org/)
 
 ## Screenshots
 
