@@ -1,9 +1,11 @@
+import configparser
 import sqlite3
 
 import requests
 import logging
 import json
 
+import collector
 from db_functions import Database
 from users import Users
 from datetime import datetime
@@ -17,6 +19,10 @@ class TelegramBot:
         self.base_url = f"https://api.telegram.org/bot{token}"
         self.logger = logging.getLogger(__name__)
         self.ui = app
+        config = configparser.ConfigParser()
+        config.read("config.ini")
+        self.config_db = config["Datenbank"]
+        self.config_warn = config["WarnAppsAPI"]
 
     def get_updates(self, offset=None):
         """
@@ -35,14 +41,6 @@ class TelegramBot:
             self.logger.error("Failed to get updates: %s", response.text)
             return None
 
-    """
-    def send_message(self, chat_id, text):
-        params = {'chat_id': chat_id, 'text': text}
-        response = requests.post(self.url + 'sendMessage', params)
-        result_json = response.json()
-        if not result_json['ok']:
-            raise Exception('Error sending message')
-    """
 
     def send_multiple_message(self, text, where=None):
         """
@@ -65,7 +63,7 @@ class TelegramBot:
         if (len(liste) > 0):
             for u in liste:
                 print(str(u[1]) + ": " + text)
-                self.send_message(u[1], text)
+                self.send_message(u[1], text) # Sende Narchicht (text) an user
 
         return userlist
 
@@ -131,17 +129,18 @@ class TelegramBot:
         :param disable_notification:
         :return:
         """
+        # Parameter für die Telegram API Anfrage
         params = {
             "chat_id": chat_id,
             "photo": photo_url,
             "disable_notification": disable_notification,
         }
-        if caption and len(caption) < 1026:
-            params["caption"] = caption
+        if caption and len(caption) < 1026:             # Caption eines Bildes darf maximal 1026 Zeichen haben
+            params["caption"] = caption                 # Wenn True: Text als Caption
         if parse_mode:
-            params["parse_mode"] = parse_mode
+            params["parse_mode"] = parse_mode           # In welchem Mode soll angewandt werden (HTML,...)
         if reply_markup:
-            params["reply_markup"] = reply_markup
+            params["reply_markup"] = reply_markup       # Reply vorgeben
 
         response = requests.post(f"{self.base_url}/sendPhoto", json=params)
 
@@ -150,7 +149,8 @@ class TelegramBot:
     def message_replace(self, msg):
         """
         Ersetzt manche HTML-Zeichen, die von Telegram nicht erkannt werden.
-        :param msg:
+        Kann erweitert werden...
+        :param msg: text
         :return:
         """
         msg = msg.replace("<br/>", "\n")
@@ -169,18 +169,8 @@ class TelegramBot:
         now = datetime.now()
         current_time = now.strftime("%d-%m-%Y %H:%M:%S")
 
-        """
-        NOT USED:
-        
-        keyboard = {
-            "inline_keyboard": [
-                [{"text": "Help", "callback_data": "button1"}],
-                [{"text": "count_users", "callback_data": "button2"}],
-            ]
-        }"""
-
-        keyboard_json = json.dumps(quickreply)
-        text = self.message_replace(text)
+        keyboard_json = json.dumps(quickreply)  # Reply als Keyboard parsen
+        text = self.message_replace(text)       # Text vorher prüfen auf HTMl Zeichen
         if quickreply != None:
             params = {
                 "chat_id": chat_id,
@@ -209,10 +199,12 @@ class TelegramBot:
         """
         chunks = []
 
+        # Die ersten 1025 Zeichen (Wegen Caption beim Bild)
         split_index = text.rfind(" ", 0, 1025)
         chunks.append(text[:split_index])
         text = text[split_index + 1:]
 
+        # alles ab 1026 wird angehangen
         while len(text) > 1025:
             split_index = text.rfind(" ", 0, 4000)
             chunks.append(text[:split_index])
@@ -225,11 +217,12 @@ class TelegramBot:
 
     def send_warnings(self, wid, version=None, chatid=None, username=None, phrase=None):
         """
-        Sendet die Warnmeldungen raus
+        Sendet die Warnmeldungen raus.
         Verbindet SendMessage und SendImage
         :return:
         """
-
+        # Welche Version soll genommen werden?
+        # Inkl. finden der aktuellsten Version
         if version is None or version == "":
             results = Database.get_query("warning_information", "wid='{}' GROUP BY version".format(wid))
         else:
@@ -274,7 +267,8 @@ class TelegramBot:
         warnmeldung_txt = self.message_replace(warnmeldung_txt)
 
         if len(warnmeldung_txt) <= 1025:                    # 1025 Chars ist die maximale Anzahl für die Caption eines Fotos.
-            if result[10] != "":
+        # Wenn kleiner als 1025, wird kein Split benötigt.
+            if result[10] != "":                            # Herausgeber URL als Schnellantwort
                 reply_markup = {
                     "inline_keyboard": [
                         [{"text": "%s" % str(result[7]), "url": "%s" % str(result[10]) }]
@@ -284,11 +278,15 @@ class TelegramBot:
                 reply_markup = None
 
             if result[13] == "" or result[13] == "None":
-                self.send_photo(chatid, "https://cdn.icon-icons.com/icons2/1808/PNG/512/warning_115257.png", warnmeldung_txt, "HTML", reply_markup)
+                # Falls es kein Bild gibt, wird dieses ausgegeben.
+                # Kann geändert werden.
+                self.send_photo(chatid, self.config_warn['Default_IMG'], warnmeldung_txt, "HTML", reply_markup)
             else:
+                # Warnung inkl Bild aus der API oder der DB
                 self.send_photo(chatid, result[13], warnmeldung_txt, "HTML", reply_markup)
 
         else:
+            # Wenn die Warnmeldung mehr als 1025 Zeichen hat ->
             warn_msg = self.split_text(warnmeldung_txt)
             print(len(warn_msg))
 
@@ -297,7 +295,7 @@ class TelegramBot:
                 if result[10] != "":
                     reply_markup = {
                         "inline_keyboard": [
-                            [{"text": "%s" % str(result[7]), "url": "%s" % str(result[10]) }]
+                            [{"text": "%s" % str(result[7]), "url": "%s" % str(result[10]) }]   # Herausgeber URL als Schnellantwort
                         ]
                     }
                 else:
@@ -309,19 +307,21 @@ class TelegramBot:
                         reply_markup = None
 
                     if result[13] == "" or result[13] == "None":
-                        self.send_photo(chatid, "https://cdn.icon-icons.com/icons2/1808/PNG/512/warning_115257.png", m, "HTML", reply_markup)
+
+                        self.send_photo(chatid, self.config_warn['Default_IMG'], m, "HTML", reply_markup)
                     else:
                         self.send_photo(chatid, result[13], m, "HTML", reply_markup)
 
                 elif i == len(warn_msg)-1:                  # Letzte Nachricht enthält eine Schnellantwort mit der URL
                     self.send_message(chatid, m, reply_markup)
-                else:
+                else:                                       # Nachricht nur mit Inhalt. Kein Bild und keine Schnellantwort
                     self.send_message(chatid, m)
                 i += 1
 
     def startSetup(self, chatid, username, phase, keyboard=None):
         """
-        Startet das Setup des Bots für den gegebenen User. Hierfür wird auch eine Phase übergeben um den Status zu tracken.
+        Startet das Setup des Bots für den gegebenen User. Hierfür wird auch eine Phase übergeben, um den Status zu tracken.
+        Setup wird in Phasen unterteilt
         :param userid:
         :param phase:
         :return:
@@ -353,7 +353,7 @@ class TelegramBot:
             """
             Phase 1: Auswahl Deutsch
             """
-            Database.execute_db("Update users Set lang='{}' WHERE chatid={}".format("de", chatid), "warn.db")
+            Database.execute_db("Update users Set lang='{}', warnings='' WHERE chatid={}".format("de", chatid), self.config_db["PATH"])
             msg = "&#9989; Sprache wurde auf Deutsch festgelegt. Ab sofort erhalten Sie alle Warnmeldungen auf Deutsch."
             self.send_message(chatid, msg)
             msg = "Schritt 2: Über welche Warnmeldungen soll der Bot Nachrichten senden?\nMehrfachauswahl möglich..\n\nFÜr weitere Informationen können die Webseiten aufgerufen werden durch\n" \
@@ -371,7 +371,7 @@ class TelegramBot:
             """
             Phase 2: Auswahl English
             """
-            Database.execute_db("Update users Set lang='{}' WHERE chatid={}".format("en", chatid), "warn.db")
+            Database.execute_db("Update users Set lang='{}' WHERE chatid={}".format("en", chatid), self.config_db["PATH"])
             msg = "&#9989; English was chosen as the language. Unfortunately, this language is not yet fully integrated," \
                   " therefore the warning messages are sent in German."
             self.send_message(chatid, msg)
@@ -422,7 +422,7 @@ class TelegramBot:
         elif text == "English":
             self.startSetup(chat_id, user_name, 2)
         elif "Region:" in text or "Stadt:" in text:
-            Database.execute_db("UPDATE users SET pref_location='{}' WHERE chatid={}".format(text.split(":", 1)[1], chat_id), "warn.db")
+            Database.execute_db("UPDATE users SET pref_location='{}' WHERE chatid={}".format(text.split(":", 1)[1], chat_id), self.config_db["PATH"])
 
             msg_keyboard = [
                 ["Help", "Verhalten Tipps"], ["Notrufnummern"]
@@ -434,13 +434,13 @@ class TelegramBot:
 
         elif "Unwetterwarnungen" in text:
             re_user_info = Database.get_query("users", "chatid={}".format(chat_id))
-            re_user_info = re_user_info[0][4]
+            re_user_info = re_user_info[0][4]               # Ruft die angegebenen Meldungsarten ab
             if re_user_info is None:
                 re_user_info = "Unwetterwarnung"
             else:
                 if "Unwetterwarnung" not in re_user_info:
                     re_user_info = str(re_user_info) + ", Unwetterwarnungen"
-            Database.execute_db("Update users SET warnings = '{}' WHERE chatid={}".format(re_user_info, chat_id), "warn.db")
+            Database.execute_db("Update users SET warnings = '{}' WHERE chatid={}".format(re_user_info, chat_id), self.config_db["PATH"])
             msg_keyboard = [
                 ["Unwetterwarnungen (DE)", "Hochwasser"],
                 ["Polizeimeldungen", "MoWaS"],
@@ -458,7 +458,7 @@ class TelegramBot:
                 if "Hochwasser" not in re_user_info:
                     re_user_info = str(re_user_info) + ", Hochwasser"
             Database.execute_db("Update users SET warnings = '{}' WHERE chatid={}".format(re_user_info, chat_id),
-                                "warn.db")
+                                self.config_db["PATH"])
             msg_keyboard = [
                 ["Unwetterwarnungen (DE)", "Hochwasser"],
                 ["Polizeimeldungen", "MoWaS"],
@@ -478,7 +478,7 @@ class TelegramBot:
                 if "Polizeimeldungen" not in re_user_info:
                     re_user_info = str(re_user_info) + ", Polizeimeldungen"
             Database.execute_db("Update users SET warnings = '{}' WHERE chatid={}".format(re_user_info, chat_id),
-                                "warn.db")
+                                self.config_db["PATH"])
             msg_keyboard = [
                 ["Unwetterwarnungen (DE)", "Hochwasser"],
                 ["Polizeimeldungen", "MoWaS"],
@@ -498,7 +498,7 @@ class TelegramBot:
                 if "Biwapp" not in re_user_info:
                     re_user_info = str(re_user_info) + ", Biwapp"
             Database.execute_db("Update users SET warnings = '{}' WHERE chatid={}".format(re_user_info, chat_id),
-                                "warn.db")
+                                self.config_db["PATH"])
             msg_keyboard = [
                 ["Unwetterwarnungen (DE)", "Hochwasser"],
                 ["Polizeimeldungen", "MoWaS"],
@@ -518,7 +518,7 @@ class TelegramBot:
                 if "Katwarn" not in re_user_info:
                     re_user_info = str(re_user_info) + ", Katwarn"
             Database.execute_db("Update users SET warnings = '{}' WHERE chatid={}".format(re_user_info, chat_id),
-                                "warn.db")
+                                self.config_db["PATH"])
             msg_keyboard = [
                 ["Unwetterwarnungen (DE)", "Hochwasser"],
                 ["Polizeimeldungen", "MoWaS"],
@@ -538,7 +538,7 @@ class TelegramBot:
                 if "Katwarn" not in re_user_info:
                     re_user_info = str(re_user_info) + ", MoWaS"
             Database.execute_db("Update users SET warnings = '{}' WHERE chatid={}".format(re_user_info, chat_id),
-                                "warn.db")
+                                self.config_db["PATH"])
             msg_keyboard = [
                 ["Unwetterwarnungen (DE)", "Hochwasser"],
                 ["Polizeimeldungen", "MoWaS"],
@@ -551,52 +551,51 @@ class TelegramBot:
                                    "Aktuelle gespeichert: {}\n\nWeitere Warnmeldungsarten?".format(re_user_info),
                                    msg_keyboard)
         elif "Fertig" in text:
-            """msg_keyboard = [
-                ["Help", "Verhalten Tipps"], ["Notrufnummern"]
-            ]
-            self.send_msg_keyboard(chat_id,
-                                   "&#9989; Setup abgeschlossen! \n Das Setup kann jederzeit neu gestartet werden durch /start",
-                                   msg_keyboard, False)
-            """
+            # Starte Phase 4 vom Setup (Ort)
             self.startSetup(chat_id, user_name, 4)
 
 
         elif "Alle Warnmeldungen" in text:
-            """Database.execute_db("Update users SET warnings = 'Alle' WHERE chatid={}".format(chat_id), "warn.db")
-            msg_keyboard = [
-                ["Help", "Verhalten Tipps"], ["Notrufnummern"]
-            ]
-            self.send_msg_keyboard(chat_id,
-                              "&#9989; Setup abgeschlossen! \n Das Setup kann jederzeit neu gestartet werden durch /start", msg_keyboard, False)"""
+            # Starte Phase 4 vom Setup (Ort)
+            Database.execute_db("Update users SET warnings = '{}' WHERE chatid={}".format("Alle", chat_id),
+                                self.config_db["PATH"])
             self.startSetup(chat_id, user_name, 4)
 
         elif text == "/stop":
+            # Keine Verwendung - Platzhalter
             return "&#9989; Dienst wurde pausiert."
         elif text == "/abmelden":
-            Database.execute_db("DELETE FROM users WHERE chatid = {}".format(chat_id), "warn.db")
+            # User wird aus der DB gelöscht.
+            Database.execute_db("DELETE FROM users WHERE chatid = {}".format(chat_id), self.config_db["PATH"])
             self.send_msg_keyboard(chat_id,
-                                   "&#9989; Setup abgeschlossen! \n Das Setup kann jederzeit neu gestartet werden durch /start",
+                                   "&#9989; Abmeldung abgeschlossen! \n Das Setup kann jederzeit neu gestartet werden. (/start)",
                                    [
                                        ["/start"]
                                    ], True)
             #return "&#9989; Sie wurden aus der Datenbank gelöscht. Ab sofort erhalten Sie keine weiteren Meldungen mehr!\nHoffentlich bis bald!"
         elif text == "/help" or text == "Help":
-            return "/stop (Pausieren des Dienstes)\n" \
+            # Ausgabe der möglichen Funktionen
+            return "/Notrufnummern (Gibt wichtige Telefonnummern aus)\n" \
                    "/abmelden (Austrag aus dem Dienst)\n" \
                    "/count_users (Zeigt die Anzahl der Nutzende an)\n" \
                    "/disclaimer (Gibt den Disclaimer aus)\n" \
-                   "/Notfalltipps (Gibt einige Tipps in Notfällen aus)\n" \
-                   "/Quelle (Gibt die Quelle der Warnungen aus)"
+                   "/Quelle (Gibt die Quelle der Warnungen aus)\n"\
+                   "/start (Startet das Setup neu!)"
         elif text == "/count_users":
-            return "&#10069; Aktuell sind mir " + str(
-                Database.count_rows("users")) + " aktive Nutzer bekannt. \nHoffentlich wachsen wir noch als Community!!"
-        elif text == "/Notfalltipps":
+            # Kleine Spaßfunktion -> Ausgabe der aktuellen Anzahl von Usern
+            return "&#10069; Aktuell gibt es " + str(
+                Database.count_rows("users")) + " aktive Nutzer."
+        elif text == "/Notfalltipps_JSON":
+            # Ruft die Notfalltipps als JSON auf. Für den User ist die Funktion "Verhalten Tipps" implementiert
             return "https://nina.api.proxy.bund.dev/api31/appdata/gsb/notfalltipps/DE/notfalltipps.json"
         elif text == "/Quelle":
+            # Beschreibung woher die Infos kommen..
             return "ALle Warnungen stammen aus der offiziellen NINA API, welche vom Bundesamt für Bevölkerungsschutz gepflegt wird. Alle übermittelten Warnungen, werden ungefiltert über diesen Bot verbreitet."
         elif text == "/disclaimer":
+            # Hier kann ein Disclaimer stehen
             return "&#128679; Folgt."
         elif text == "Notrufnummern":
+            # Wichtige Rufnummern.
             return "<b>Wichtige Notrufnummern in DE:</b>\n - Polizei: 110\n- Rettungsdienst und Feuerwehr: 112\n- Ärztlicher Bereitschaftsdienst: 116117\n\n" \
                    "<b>Giftnotrufzentralen</b>\n" \
                    "<b>Baden-Württemberg</b> (Telefon: 0761 19240)\n" \
@@ -609,6 +608,8 @@ class TelegramBot:
                    "<b>Saarland</b> (Telefon: 06841 19240)\n\n" \
                    "Quelle: https://www.malteser.de/aware/hilfreich/notrufnummern-in-deutschland-das-musst-du-wissen.html"
         elif text == "Verhalten Tipps":
+            # Navigation durch die Verhalten Tipps.
+            # Infos kommen aus der JSON der NINA API und können manuell aktualisiert werden
             keyboard = []
             conn = sqlite3.connect('warn.db')
             c = conn.cursor()
@@ -640,7 +641,8 @@ class TelegramBot:
                                    "Wähle eine Option aus:",
                                    msg_keyboard, False)
         else:
-            # TODO: Manche Notfalltipps werden nicht korrekt ausgegeben. Der Inhalt wird fälschlicherweise bei manchen Optionen als Kategorie gesehen, nicht als Titel
+            # Jede andere Benutzereingabe
+
             keyboard = []
             conn = sqlite3.connect('warn.db')
             c = conn.cursor()
@@ -653,14 +655,20 @@ class TelegramBot:
 
             c.execute("SELECT inhalt from notfalltipps WHERE titel='{}'".format(text))
             result_inhalt = c.fetchall()
+
+            # Gibt es ein Inhalts-Element?
             if len(result_inhalt) > 0:
                 self.send_message(chat_id, result_inhalt[0][0])
+
+            # Gibt es eine Kategorie mit dem Begriff?
             elif len(results_kat2) > 0:
                 msg_keyboard = self.generate_keyboard(results_kat2)
                 self.send_msg_keyboard(chat_id,
                                        "Wähle eine Option aus:",
                                        msg_keyboard, False)
                 print(results_kat2)
+
+            # Gibt es ein Titel zu dem Begriff?
             elif len(results_title) > 0:
 
                 msg_keyboard = self.generate_keyboard(results_title)
@@ -668,12 +676,9 @@ class TelegramBot:
                                        "Wähle eine Option aus:",
                                        msg_keyboard, False)
                 print(results_title)
+
+            # Ansonsten allgemeine Fehlermeldung
             else:
-                #c.execute("SELECT inhalt from notfalltipps WHERE titel='{}'".format(text))
-                #result_inhalt = c.fetchall()
-                #if len(result_inhalt) > 0:
-                #    self.send_message(chat_id, result_inhalt[0][0])
-                #else:
                print(replay_key)
                return "&#10060; Fehler: Diese Nachricht konnte nicht verarbeitet werden. Möglicherweise wurde ich nicht für die gewünschte Aktion entwickelt. \n \n Mit <b>/help</b> werden alle Funktionen angezeigt."
 
@@ -688,11 +693,11 @@ class TelegramBot:
         if len(array) > 0:
             num_kategorien = len(array)
             if num_kategorien % 2 == 0:
-                # even number of elements
+                # gerade Anzahl von Elementen
                 for i in range(0, num_kategorien, 2):
                     keyboard.append([array[i][0], array[i + 1][0]])
             else:
-                # odd number of elements
+                # Ungerade Anzahl von Elementen
                 for i in range(0, num_kategorien - 1, 2):
                     keyboard.append([array[i][0], array[i + 1][0]])
                 keyboard.append([array[-1][0]])
@@ -730,7 +735,6 @@ class TelegramBot:
 
                 if u.check_user(user_id):
                     self.logger.warning("[User Warning] User muss angelegt werden!")
-                    # TODO: Setup starten und User durchleiten
                     userdata = [
                         user_id,
                         message["from"]["first_name"],

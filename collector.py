@@ -1,6 +1,8 @@
 """
     Sammeln der Daten aus NINA usw
 """
+import configparser
+
 import requests
 import time
 from db_functions import Database
@@ -16,12 +18,17 @@ class Collector:
         self.__Server = server
         self.__DB = db
         self.path_json = os.path.dirname(__file__) + "/last_updates/"
+        config = configparser.ConfigParser()
+        config.read("config.ini")
+        self.config_warn = config["WarnAppsAPI"]
 
     @staticmethod
     def custom_warning(wid, title_de, title_en, version, severity, type, geo, source, descr):
         """
         Funktion für Custom-Warnmeldungen. Updated oder Schreibt in die DB.
-        OUTDATED.
+        OUTDATED -> Wird nicht weiter aktiv genutzt, dient als BACKUP.
+
+        Warnmeldung wird bei einer neuen Version überschrieben und nicht neu angelegt.
 
         :param wid:
         :param title_de:
@@ -64,7 +71,7 @@ class Collector:
 
     def write_in_json(self, data, f):
         """
-        Schreibt in ein JSON file.
+        Schreibt data in ein JSON file.
         :param data:
         :param f:
         :return:
@@ -114,10 +121,7 @@ class Collector:
             "timeout": 100,
             "offset": offset
         }
-        # TODO: Vergleich nach Updates muss anders gemacht werden, weil die API kein Timestamp liefert.
-        #  Webhook nutzen?
-        self.get_warning_information("kat.64275c6362aefd2bb0bb6bb8_public_topics", 1)
-        self.check_exist_json(api_urls)
+
         while True:
             print("[" + str(datetime.now().strftime("%d-%m-%Y %H:%M:%S")) + "] CHECK WARNING UPDATES..")
             for url in api_urls:
@@ -127,6 +131,7 @@ class Collector:
                 if response.status_code == 200:
                     updates = response.json()
                     if updates and len(updates) > 0:
+                        # JSON Vergleich
                         res_comp = self.compare_json_files(self.path_json + url[0] + ".json", updates)
 
                         if not res_comp:  # Wenn Die Dateien unterschiedlich waren vom Content
@@ -137,12 +142,8 @@ class Collector:
                 else:
                     print(response.status_code)
 
-            time.sleep(59)  # Excecute every 59sec + 1sec startup time (every 60 sec checker)
-
-    def update_warning(self):
-        pass
-
-    import json
+            time.sleep(self.config_warn['INTERVALL'])  # Excecute every 59sec + 1sec startup time (every 60 sec checker)
+            #time.sleep(59)  # Excecute every 59sec + 1sec startup time (every 60 sec checker)
 
     def process_information(self, updates):
         """
@@ -155,6 +156,7 @@ class Collector:
 
         print("[updater_warnings][" + m_last_update + "] Checker wird ausgeführt...")
         for u in updates:
+            # Sammle alle wichtigen Parameter
             m_source = None
             m_title_de = None
             m_title_en = None
@@ -187,12 +189,14 @@ class Collector:
             else:
                 m_source = "unknown"
 
+            #Prüfe ob Warnung bereits vorhanden ist
             db_check_result = Database.check_if_exist("warnings", self.__DB, "wid", m_id)
             if db_check_result:
                 if (db_check_result[4] == m_version):
                     # print("[updater_warnings][" + m_last_update + "]" + m_id + " ist bereits auf der aktuellsten version!")
                     continue
                 else:
+                    # Wenn vorhanden, aber neue Version
                     print(
                         "\t\t[updater_warnings][" + m_last_update + "]" + m_id + " wurde aktualisiert! (New Version: " + str(
                             m_version) + ") prev: " + str(db_check_result[4]))
@@ -213,6 +217,7 @@ class Collector:
                     Database.execute_db(query, self.__DB)
                     self.get_warning_information(m_id, m_version)
             else:
+                # Wenn nicht vorhanden
                 print(
                     "\t\t[insert_warnings][" + m_last_update + "]" + m_id + " wurde angelegt! (Version: " + str(
                         m_version) + ")")
@@ -269,6 +274,7 @@ class Collector:
                 dataInfo2 = json.loads(json_data)
 
                 # print(str(d) + ': ' + str(data[d]))
+                # Um fehler zu entgehen, die als Schreibweisen in der API übermittelt werden
                 str_info = str(dataInfo2.get("description", ""))
                 str_info = str_info.replace("`", "''")
 
@@ -373,62 +379,6 @@ class Collector:
         else:
             print(response.status_code)
 
-    def point_in_polygon(self, polygon: list, point: tuple) -> bool:
-        x, y = point
-        n = len(polygon)
-        inside = False
-        p1x, p1y = polygon[0]
-        for i in range(1, n + 1):
-            p2x, p2y = polygon[i % n]
-            if y > min(p1y, p2y):
-                if y <= max(p1y, p2y):
-                    if x <= max(p1x, p2x):
-                        if p1y != p2y:
-                            xinters = (y - p1y) * (p2x - p1x) / (p2y - p1y) + p1x
-                        if p1x == p2x or x <= xinters:
-                            inside = not inside
-            p1x, p1y = p2x, p2y
-        return inside
-
-    def point_in_linestring(self, linestring: list, point: tuple) -> bool:
-        # Eine LineString ist kein Polygon und kann deshalb nicht geprüft werden.
-        return False
-
-    def point_in_multipoint(self, multipoint: list, point: tuple) -> bool:
-        # Überprüfen, ob das Point-Objekt in der Liste der MultiPoint-Koordinaten enthalten ist.
-        return point in multipoint
-
-    def point_in_multilinestring(self, multilinestring: list, point: tuple) -> bool:
-        # Eine MultiLineString ist kein Polygon und kann deshalb nicht geprüft werden.
-        return False
-
-    def point_in_multipolygon(self, multipolygon: list, point: tuple) -> bool:
-        for polygon in multipolygon:
-            if self.point_in_polygon(polygon[0], point):
-                return True
-        return False
-
-    def point_in_geojson(self, geojson: dict, point: tuple) -> bool:
-        """
-        Vorbereitung um die GEO-Daten von Warnmeldungen auszuwerten. Wird in der aktuellen Version nicht verwendet.
-        Unterstützt die Ortung und Zuordnung von Meldungen an den aktuellen Standort.
-        :param geojson:
-        :param point:
-        :return:
-        """
-        if geojson["type"] == "Point":
-            return point == tuple(geojson["coordinates"])
-        elif geojson["type"] == "LineString":
-            return self.point_in_linestring(geojson["coordinates"], point)
-        elif geojson["type"] == "Polygon":
-            return self.point_in_polygon(geojson["coordinates"][0], point)
-        elif geojson["type"] == "MultiPoint":
-            return self.point_in_multipoint(geojson["coordinates"], point)
-        elif geojson["type"] == "MultiLineString":
-            return self.point_in_multilinestring(geojson["coordinates"], point)
-        elif geojson["type"] == "MultiPolygon":
-            return self.point_in_multipolygon(geojson["coordinates"], point)
-
     def collect_notfalltipps(self):
         """
         Sammelt die Informationen aus der JSON mit Notfalltipps und speichert diese in der DB ab.
@@ -480,6 +430,69 @@ class Collector:
         text = re.sub(r'<.*?>', '', text)
 
         return text
+
+    """
+    Die Folgende Funktionen waren zur Vorbereitung zur Standortbestimmung angedacht. Die Funktionalität war nicht weiter notwendig, aufgrund des gelegten Fokus.
+    Dennoch sind die Implementierungen (zumindest teilweise) vorhanden, um zu einem späteren Zeitpunkt die Umsetzung fortzusetzen.
+    """
+    def point_in_polygon(self, polygon: list, point: tuple) -> bool:
+        x, y = point
+        n = len(polygon)
+        inside = False
+        p1x, p1y = polygon[0]
+        for i in range(1, n + 1):
+            p2x, p2y = polygon[i % n]
+            if y > min(p1y, p2y):
+                if y <= max(p1y, p2y):
+                    if x <= max(p1x, p2x):
+                        if p1y != p2y:
+                            xinters = (y - p1y) * (p2x - p1x) / (p2y - p1y) + p1x
+                        if p1x == p2x or x <= xinters:
+                            inside = not inside
+            p1x, p1y = p2x, p2y
+        return inside
+
+    def point_in_linestring(self, linestring: list, point: tuple) -> bool:
+
+        # Eine LineString ist kein Polygon und kann deshalb nicht geprüft werden.
+        return False
+
+    def point_in_multipoint(self, multipoint: list, point: tuple) -> bool:
+        # Überprüfen, ob das Point-Objekt in der Liste der MultiPoint-Koordinaten enthalten ist.
+        return point in multipoint
+
+    def point_in_multilinestring(self, multilinestring: list, point: tuple) -> bool:
+        # Eine MultiLineString ist kein Polygon und kann deshalb nicht geprüft werden.
+        return False
+
+    def point_in_multipolygon(self, multipolygon: list, point: tuple) -> bool:
+        for polygon in multipolygon:
+            if self.point_in_polygon(polygon[0], point):
+                return True
+        return False
+
+    def point_in_geojson(self, geojson: dict, point: tuple) -> bool:
+        """
+        Vorbereitung um die GEO-Daten von Warnmeldungen auszuwerten. Wird in der aktuellen Version nicht verwendet.
+        Unterstützt die Ortung und Zuordnung von Meldungen an den aktuellen Standort.
+        :param geojson:
+        :param point:
+        :return:
+        """
+        if geojson["type"] == "Point":
+            return point == tuple(geojson["coordinates"])
+        elif geojson["type"] == "LineString":
+            return self.point_in_linestring(geojson["coordinates"], point)
+        elif geojson["type"] == "Polygon":
+            return self.point_in_polygon(geojson["coordinates"][0], point)
+        elif geojson["type"] == "MultiPoint":
+            return self.point_in_multipoint(geojson["coordinates"], point)
+        elif geojson["type"] == "MultiLineString":
+            return self.point_in_multilinestring(geojson["coordinates"], point)
+        elif geojson["type"] == "MultiPolygon":
+            return self.point_in_multipolygon(geojson["coordinates"], point)
+
+
 
 """if __name__ == "__main__":
     server = f'https://warnung.bund.de/api31'

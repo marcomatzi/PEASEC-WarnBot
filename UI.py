@@ -1,3 +1,4 @@
+import configparser
 import datetime
 import os
 import threading
@@ -25,39 +26,13 @@ customtkinter.set_appearance_mode("Light")  # Modes: "System" (standard), "Dark"
 customtkinter.set_default_color_theme("blue")  # Themes: "blue" (standard), "green", "dark-blue"
 var_info = "TEST"
 
-"""class ToplevelWindow(customtkinter.CTkToplevel):
-    def __init__(self, app, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.app = app  # save reference to the App instance
-        self.db = Database
-        self.geometry("900x500")
-        self.title("Warnmeldungen Evaluieren - Bachelorthesis Marco Matissek")
-        self.grid_columnconfigure(0, weight=1)
-        self.grid_columnconfigure((1, 2, 3), weight=0)
-        self.grid_rowconfigure((9, 10), weight=0)
-
-        # LOGO
-        self.headline = customtkinter.CTkLabel(master=self, text="Evaluation",
-                                               font=("Arial", 30),
-                                               text_color="#4a97cf")
-        self.headline.grid(row=0, column=0, padx=20, pady=(20, 20), columnspan=4, sticky="nesw")
-
-        # TODO: Userform erstellen
-        # TODO: Senden an einzelpersonen und an Gruppen -> Auswahl über ein Dropdown und Radio-Buttons
-        # TODO: Anrede auswählen können
-        # TODO: ...
-
-        # update the button text on initial creation
-        self.update_button_text()
-
-    def update_button_text(self):
-        pass"""
-
-
 class App(customtkinter.CTk):
     def __init__(self, token):
         super().__init__()
         self.toplevel_window = None
+        config = configparser.ConfigParser()
+        config.read("config.ini")
+        self.config_db = config["Datenbank"]
 
         tb = telegram_api.TelegramBot(token, self)
 
@@ -307,7 +282,6 @@ class App(customtkinter.CTk):
         self.second_codeImglabel.grid(row=2, column=3, padx=(25, 0), pady=(0, 0), sticky="nw")
 
         ## Labels
-        # TODO: Umbenennen der Label
         self.second_label = customtkinter.CTkLabel(self.second_frame, text="Wähle Warnung:")
         self.second_label.grid(row=1, column=0, padx=(20, 0), pady=(0, 0), sticky="nw")
         self.second_label_version = customtkinter.CTkLabel(self.second_frame, text="Version:")
@@ -717,6 +691,11 @@ class App(customtkinter.CTk):
         # self.four_frame.grid_rowconfigure((0, 1, 2), weight=1)
 
     def select_frame_by_name(self, name):
+        """
+        Wählt das Frame aus, nach übermittlung des Namen.
+        :param name:
+        :return:
+        """
         # set button color for selected button
         self.home_button.configure(fg_color=("gray75", "gray25") if name == "home" else "transparent")
         self.frame_2_button.configure(fg_color=("gray75", "gray25") if name == "frame_2" else "transparent")
@@ -757,12 +736,20 @@ class App(customtkinter.CTk):
             self.six_frame.grid_forget()
 
     def home_button_event(self):
+        """
+        Öffnet die Startseite (home)
+        :return:
+        """
         self.get_dbInfo()
         self.select_frame_by_name("home")
 
     def frame_2_button_event(self):
+        """
+        Öffnet die Warnmeldungen UI und lädt alle Inhalte
+        :return:
+        """
         results = []
-        conn = sqlite3.connect('warn.db')
+        conn = sqlite3.connect(self.config_db['PATH'])
         c = conn.cursor()
         c.execute("SELECT DISTINCT(warnings.wid), warnings.title_de, warnings.last_update, warning_information.wid "
                   "FROM warnings INNER JOIN warning_information WHERE warnings.wid = warning_information.wid GROUP "
@@ -776,12 +763,24 @@ class App(customtkinter.CTk):
         self.select_frame_by_name("frame_2")
 
     def frame_3_button_event(self):
+        """
+        Öffnet Frame 3 : Custom Warnungen
+        :return:
+        """
         self.select_frame_by_name("frame_3")
 
     def frame_4_button_event(self):
+        """
+        Öffnet Frame 4: Not used
+        :return:
+        """
         self.select_frame_by_name("frame_4")
 
     def frame_5_button_event(self):
+        """
+            Öffnet Frame 5: Verwaltung User
+        :return:
+        """
         u = Users(0)
         print(len(u.get_all_users()))
         self.combobox_users.configure(values=u.get_all_users())
@@ -790,7 +789,7 @@ class App(customtkinter.CTk):
 
     def frame_6_button_event(self):
         """
-        Frame für die UserGruppen
+            Frame 6, für die UserGruppen
         :return:
         """
         ug = UserGroup()
@@ -801,14 +800,22 @@ class App(customtkinter.CTk):
     # def change_appearance_mode_event(self, new_appearance_mode):
     #    customtkinter.set_appearance_mode(new_appearance_mode)
     def open_toplevel(self):
+        """
+        Öffnet die Evaluation-Userform
+        :return:
+        """
         if self.toplevel_window is None or not self.toplevel_window.winfo_exists():
             self.toplevel_window = uie.ToplevelWindow(self, self)  # create window if its None or destroyed
         else:
             self.toplevel_window.focus()  # if window exists focus it
 
     def fill_values(self):
+        """
+        Ruft die WarnIDs von warnings auf und gibt diese aus
+        :return:
+        """
         results = []
-        conn = sqlite3.connect('warn.db')
+        conn = sqlite3.connect(self.config_db['PATH'])
         c = conn.cursor()
         c.execute("SELECT wid FROM warnings")
         res_values = c.fetchall()
@@ -819,6 +826,11 @@ class App(customtkinter.CTk):
         # return result
 
     def combobox_callback_userGroup(self, choice):
+        """
+            Zeigt alle USer in einer Gruppe an
+        :param choice:
+        :return:
+        """
         if choice == "n/A":
             return None
 
@@ -841,9 +853,11 @@ class App(customtkinter.CTk):
         if len(gr_users) > 0:
             str_gr_users = ""
             for e in gr_users:
+                # Ausgabe der User als String pro Zeile und mit TABULATOR als Trenner
                 str_gr_users = str_gr_users + str(e[0]) + "\t\t" + str(e[1]) + "\t\t" + str(e[2]) + "\t\t" + str(
                     e[3]) + "\t\t" + str(e[4]) + "\t\t" + str(e[5]) + "\n"
         else:
+            # Falls keine User in der Gruppe sind.
             str_gr_users = "\nKeine User in dieser Gruppe vorhanden..."
             # print("dddd" + str(gr_users))
 
@@ -861,14 +875,31 @@ class App(customtkinter.CTk):
         self.gr_textbox_users.configure(state="disabled")
 
     def save_group(self, gnr, descr):
+        """
+        Gruppe speichern
+        :param gnr:
+        :param descr:
+        :return:
+        """
         ug = UserGroup()
         ug.edit_group(gnr, descr)
 
     def del_group(self, gid):
+        """
+        Gruppe löschen
+        :param gid:
+        :return:
+        """
         ug = UserGroup()
         ug.del_group(gid)
 
     def new_group(self, gnr, descr):
+        """
+        Neue Usergruppe erstellen - UI Einstellungen
+        :param gnr:
+        :param descr:
+        :return:
+        """
         ug = UserGroup()
         self.gr_txtb_id.configure(state="normal")
         self.gr_txtb_id.delete(0, customtkinter.END)
@@ -885,7 +916,10 @@ class App(customtkinter.CTk):
         self.six_frame_button_new.grid_forget()
 
     def transmit_group(self):
-        print("bin da")
+        """
+        Usergruppe erstellen - DB eintragen
+        :return:
+        """
         ug = UserGroup()
         feedback = ug.create_group(self.gr_txtb_nr.get(), self.gr_txtb_descr.get())
         print(feedback)
@@ -898,6 +932,10 @@ class App(customtkinter.CTk):
             messagebox.showerror("Fehler", "GruppenNr ist bereits in verwendung! Bitte andere wählen.")
 
     def new_group_cancel(self):
+        """
+        Neue Gruppe anlegen - Abbrechen
+        :return:
+        """
         self.gr_txtb_nr.delete(0, customtkinter.END)
         self.gr_txtb_descr.delete(0, customtkinter.END)
         self.gr_textbox_users.delete(0, customtkinter.END)
@@ -913,12 +951,21 @@ class App(customtkinter.CTk):
         self.gr_txtb_id.configure(placeholder_text="Wähle eine Gruppe")
 
     def del_user(self, data):
+        """
+        user löschen
+        :param data:
+        :return:
+        """
         u = Users(self.txtb_UID.get())
         u.del_user(self.txtb_id.get())
         self.combobox_users.set(data[0])
         self.combobox_callback_users(self.combobox_users.get())
 
     def edit_user(self):
+        """
+        User bearbeiten in der DB speichern
+        :return:
+        """
         uid = self.txtb_UID.get()
         state = self.five_frame_button_edit.cget("text")
 
@@ -948,7 +995,7 @@ class App(customtkinter.CTk):
             self.txtb_wartungstypen.configure(state="disabled")
 
             ## Aktionen
-            data = [None] * 8
+            data = [None] * 8                           # Plätze im Array zur Übermittlung aller Infos
             data[0] = int(self.txtb_id.get())
             data[1] = self.txtb_Name.get()
             data[2] = self.txtb_lang.get()
@@ -968,6 +1015,11 @@ class App(customtkinter.CTk):
             self.combobox_callback_users(self.combobox_users.get())
 
     def combobox_callback_users(self, choice):
+        """
+        Aktion für einen neue USER auswählen. UI wird geleert und neu befüllt
+        :param choice:
+        :return:
+        """
         ## Setze alles auf enable
         self.txtb_id.configure(state="normal")
         self.txtb_Name.configure(state="normal")
@@ -1089,7 +1141,12 @@ class App(customtkinter.CTk):
             self.combobox_version.set(ver)
 
     def call_edit_warning(self, wid, ver):
-        # TODO: WID übergeben und bearbeiten Modus aktivieren -> Felder vorausfüllen und ID sperren um zu erkenn das bearbeiten
+        """
+        Warnmeldung bearbeiten und in der Userform aufrufen.
+        :param wid:
+        :param ver:
+        :return:
+        """
         db = Database()
         results = db.get_query("warning_information", "wid='{}' AND version={}".format(wid, ver))
         result = results[0]
@@ -1119,6 +1176,10 @@ class App(customtkinter.CTk):
         self.select_frame_by_name("frame_3")  # Öffne das Frame "Warnmeldung erstellen"
 
     def clear_frame_3(self):
+        """
+        Leere Userform 3
+        :return:
+        """
         self.third_frame_ID.configure(state="normal")
 
         self.third_frame_ID.delete(0, customtkinter.END)
@@ -1136,6 +1197,11 @@ class App(customtkinter.CTk):
         self.third_frame_area.delete(0, customtkinter.END)
 
     def save_new_warning(self, cancel_wid=None):
+        """
+        Speicher die neue Warnung in der DB ab.
+        :param cancel_wid: Ob die Meldung deaktiviert wurde
+        :return:
+        """
         status = self.third_frame_ID.cget(
             "state")  # Rufe den Status ab von WID. Wenn disabled, dann updaten und sonst neu erstellen
         # Rufe alle Variablen ab
@@ -1161,7 +1227,7 @@ class App(customtkinter.CTk):
         if cancel_wid:
             query = "UPDATE warnings SET type = 'Cancel', version={}, last_update='{}' WHERE wid='{}'".format(
                 int(var_version) + 1, var_currentDateTime, var_wid)
-            Database.execute_db(query, "warn.db")
+            Database.execute_db(query, self.config_db['PATH'])
 
             query = "INSERT INTO warning_information (wid,version,sender,status,msgType,scope,senderName,headline," \
                     "text,web,areaDesc,codeIMG,image,event,urgency,severity,certainty,DateEffective,DateOnset," \
@@ -1172,7 +1238,7 @@ class App(customtkinter.CTk):
                                         var_descr, var_web, var_area, var_imgc, var_img, var_event, var_urgancy,
                                         var_severity, var_certainty, var_effective, var_currentDateTime, var_expires,
                                         var_instruction)
-            Database.execute_db(query, "warn.db")
+            Database.execute_db(query, self.config_db['PATH'])
 
             messagebox.showwarning("STATUS: Cancel", "Warnmeldung wurde aufgehoben!")
             self.clear_frame_3()
@@ -1189,20 +1255,19 @@ class App(customtkinter.CTk):
                                         var_descr, var_web, var_area, var_imgc, var_img, var_event, var_urgancy,
                                         var_severity, var_certainty, var_effective, var_currentDateTime, var_expires,
                                         var_instruction)
-            success = Database.execute_db(query, "warn.db")
+            success = Database.execute_db(query, self.config_db['PATH'])
 
             query = "INSERT INTO warnings (wid,title_de,title_en,version,severity,type,source,descr,last_update)" \
                     "VALUES ('{}','{}','{}',{},'{}','{}','{}','{}','{}')".format(var_wid, var_title, "None", 1,
                                                                                  var_severity,
                                                                                  "Alert", "custom", var_descr,
                                                                                  var_currentDateTime)
-            Database.execute_db(query, "warn.db")
+            Database.execute_db(query, self.config_db['PATH'])
             if success:
                 messagebox.showinfo("Erfolgeich!", "Warnmeldung wurde erfolgreich angelegt. WID: " + var_wid)
                 self.clear_frame_3()
 
         elif status == "disabled":
-            # TODO: Version +1 und neu anlegen mit allen änderungen. Status = Update?
             query = "INSERT INTO warning_information (wid,version,sender,status,msgType,scope,senderName,headline," \
                     "text,web,areaDesc,codeIMG,image,event,urgency,severity,certainty,DateEffective,DateOnset," \
                     "DateExpires,instruction) VALUES(" \
@@ -1212,12 +1277,17 @@ class App(customtkinter.CTk):
                                         var_descr, var_web, var_area, var_imgc, var_img, var_event, var_urgancy,
                                         var_severity, var_certainty, var_effective, var_currentDateTime, var_expires,
                                         var_instruction)
-            success = Database.execute_db(query, "warn.db")
+            success = Database.execute_db(query, self.config_db['PATH'])
         else:
             messagebox.showerror("Fehler",
                                  "Status kann nicht ermittelt werden! Sie müssen den Vorgang neu durchführen.")
 
     def pull_img_url(self, url):
+        """
+        Rufe die Bilder aus der Warnmeldung ab.
+        :param url:
+        :return:
+        """
         if url == 'None':
             return Image.open(os.path.join("Test/test_images/platzhalter.png")).resize((256, 256))
 
@@ -1230,23 +1300,46 @@ class App(customtkinter.CTk):
         return pil_image
 
     def open_input_dialog_event(self):
+        """
+        Dialogbox -> ENTWURF
+        :return:
+        """
         dialog = customtkinter.CTkInputDialog(text="Type in a number:", title="CTkInputDialog")
         print("CTkInputDialog:", dialog.get_input())
 
     def change_appearance_mode_event(self, new_appearance_mode: str):
+        """
+        Ändert den Darstellungsmodus
+        :param new_appearance_mode:
+        :return:
+        """
         customtkinter.set_appearance_mode(new_appearance_mode)
 
     def change_scaling_event(self, new_scaling: str):
+        """
+        Ändert die Auflösung (Zoom)
+        :param new_scaling:
+        :return:
+        """
         new_scaling_float = int(new_scaling.replace("%", "")) / 100
         customtkinter.set_widget_scaling(new_scaling_float)
 
     def sidebar_button_event(self):
+        """
+        TEST Botton
+        :return:
+        """
         prev = self.home_textbox_updates.get("0.0", "end")
         print(len(prev))
         print(self.home_textbox_updates.get("0.0", "end"))
         self.insert_update("Test")
 
     def insert_update(self, text: str):
+        """
+        Fügt Updates in die Textbox auf der Startseite ein.
+        :param text:
+        :return:
+        """
         # self.textbox.delete("0.0", "end")  # delete all text
         # self.textbox.delete("0.0", "end")
         self.home_textbox_updates.configure(state="normal")
@@ -1353,6 +1446,6 @@ class App(customtkinter.CTk):
 #    app = App()
 #    app.mainloop()
 
-if __name__ == "__main__":
+"""if __name__ == "__main__":
     app = App("5979163637:AAFsR0MwfvPb9FwB2oPQKPQJlnkmkcZmKmg")
-    app.mainloop()
+    app.mainloop()"""

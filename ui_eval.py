@@ -97,7 +97,6 @@ class ToplevelWindow(customtkinter.CTkToplevel):
         self.txtb_anrede.grid(row=7, column=1, padx=(20, 0), pady=(5, 0), sticky="nw", columnspan=2)
         self.txtb_anrede.insert(0, "Hallo [username],")
         ### Sektion 3: Warnmeldung
-        # TODO: Aktivieren, ansonsten nur Plaintext senden
         self.lbl_sendmsg = customtkinter.CTkLabel(self, text="Warnmeldung", fg_color="#A5A4A5",
                                                   text_color="white")
         self.lbl_sendmsg.grid(row=8, column=0, padx=(20, 0), pady=(20, 0), sticky="nesw", columnspan=3)
@@ -169,14 +168,28 @@ class ToplevelWindow(customtkinter.CTkToplevel):
         self.radiobutton_5.invoke()
 
     def radio_anrede_event(self):
+        """
+        Hier können Aktionen bei der Auswahl von der Anrede eingefügt werden.
+        :return:
+        """
         pass
         # print(self.radio_anrede.get())
 
     def checkbox_event(self):
+        """
+        Hier können Aktionen bei der Auswahl von der Version eingefügt werden. (Neuste Version Warnmeldung)
+        :return:
+        """
         pass
         # print("checkbox toggled, current value:", self.check_var.get())
 
     def cb_users_event(self, choice):
+        """
+        FUnktion um alle Informationen vom ausgewähltem User abzufragen.
+
+        :param choice: Auswahl des Users
+        :return:
+        """
         choice_id = choice.split(":", 1)[0]
         res = db_functions.Database.get_query("users", "uid={}".format(choice_id))
         self.lbl_userlangLoc.configure(text="Sprache: {} \nStandort: {}".format(res[0][3], res[0][7]))
@@ -199,6 +212,11 @@ class ToplevelWindow(customtkinter.CTkToplevel):
         self.lbl_userwarn.configure(text="Warnmeldungen: {}".format(var1))
 
     def cb_filter_event(self, choice):
+        """
+        Filter für die Warnmeldungen. Nach Auswahl einer Kategorie wird das DropDown mit den Warnmeldungen gefiltert
+        :param choice: Auswahl der Kategorie
+        :return:
+        """
         results = Database.get_query("warning_information", "wid like '{}%'".format(choice))
         arr = []
         for result in results:
@@ -207,6 +225,11 @@ class ToplevelWindow(customtkinter.CTkToplevel):
         self.cb_warnmeldung.configure(values=arr, state="normal")
 
     def radiobutton_sendto_event(self):
+        """
+        Fallunterscheidung zwischen Einzelperson und Gruppe.
+        Je nach Auswahl, wird die DB Abfrage angepasst, um das DropDown zu füllen
+        :return:
+        """
         self.cb_users.configure(state="normal")
 
         if (self.radio_sendto.get() == 1):
@@ -227,6 +250,11 @@ class ToplevelWindow(customtkinter.CTkToplevel):
         # print("radiobutton toggled, current value:", self.radio_sendto.get())
 
     def radiobutton_msg_event(self):
+        """
+        Fallunterscheidung zwischen Textnachricht oder Warnmeldung.
+        Je nach Auswahl ändert sich das UI und man kann eine Textnachricht oder eine Warnmeldung versenden.
+        :return:
+        """
         var_selected = self.radio_msg.get()
 
         if var_selected == 1:
@@ -263,6 +291,10 @@ class ToplevelWindow(customtkinter.CTkToplevel):
             print("Error: MSG-Type unbekannt. Funktion: radiobutton_msg_event")
 
     def send_warning(self):
+        """
+        Versenden der Warnmeldung über die Evaluierungsform
+        :return:
+        """
         user = []
         phase = self.txtb_anrede.get()
         if self.radio_sendto.get() == 1:
@@ -300,7 +332,7 @@ class ToplevelWindow(customtkinter.CTkToplevel):
             elif self.cb_warnmeldung.cget("state") == "normal":
                 # print(personal_anrede)
                 if self.checkbox.get() == "on":
-                    tb.send_warnings(self.cb_warnmeldung.get().split(":")[0], "", u[1], personal_anrede, phase)
+                    tb.send_warnings(self.cb_warnmeldung.get().split(":")[0], "", u[1], personal_anrede, phase) # Senden mit Neuster Version
                 else:
                     tb.send_warnings(self.cb_warnmeldung.get().split(":")[0],
-                                     self.cb_warnmeldung.get().split("Version: ")[1], u[1], personal_anrede, phase)
+                                     self.cb_warnmeldung.get().split("Version: ")[1], u[1], personal_anrede, phase) # Senden mit spezifischer Version
