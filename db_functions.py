@@ -1,6 +1,10 @@
+import configparser
 import os
 import sys
 import sqlite3
+from datetime import datetime
+
+
 
 class Database:
     """def __init__(self, dbname):
@@ -8,8 +12,15 @@ class Database:
 
     @staticmethod
     def create_db():
+        """
+            Erstellt eine DB mit den Tabellen
+        """
+
+        config = configparser.ConfigParser()
+        config.read("config.ini")
+        config_db = config["Datenbank"]
         # Existenz feststellen
-        if os.path.exists("warn.db"):
+        if os.path.exists(config_db['PATH']):
             print("Datei bereits vorhanden")
             raise Exception("This is an exception")
 
@@ -20,76 +31,55 @@ class Database:
         cursor = connection.cursor()
 
         # Datenbanktabelle erzeugen
-        sql = "CREATE TABLE warnings(" \
-              "id INTEGER PRIMARY KEY AUTOINCREMENT, " \
-              "wid TEXT, " \
-              "title_de TEXT, " \
-              "title_en TEXT, " \
-              "version INTEGER, " \
-              "severity TEXT, " \
-              "type TEXT," \
-              "geo TEXT," \
-              "source TEXT," \
-              "descr TEXT)"
+        sql = "CREATE TABLE notfalltipps (id INTEGER PRIMARY KEY, kategorie TEXT, kategorie2 TEXT, titel TEXT,  inhalt TEXT)"
         cursor.execute(sql)
 
-        sql = "CREATE TABLE users(" \
-              "id INTEGER PRIMARY KEY AUTOINCREMENT, " \
-              "uid NUMERIC, " \
-              "name TEXT, " \
-              "lang TEXT, " \
-              "warnings INTEGER" \
-              "chatid INTEGER)"
+        sql = 'CREATE TABLE "user_groups" ("ID" INTEGER, "group_nr" INTEGER, "description" TEXT, PRIMARY KEY("ID" AUTOINCREMENT))'
         cursor.execute(sql)
 
-        sql = "CREATE TABLE warntype(" \
-              "id INTEGER PRIMARY KEY AUTOINCREMENT, " \
-              "name TEXT," \
-              "type TEXT)"
+        sql = 'CREATE TABLE "users" ("id" INTEGER, "uid" NUMERIC, "name" TEXT, "lang" TEXT, "warnings" TEXT, "chatid" INTEGER, "group_id" INTEGER, "pref_location" TEXT, PRIMARY KEY("id" AUTOINCREMENT))'
         cursor.execute(sql)
+
+        sql = 'CREATE TABLE "warning_information" ("id" INTEGER, "wid" TEXT, "version" INTEGER, "sender" TEXT, "status" TEXT, "msgType" TEXT, "scope" TEXT, "senderName" TEXT, "headline" TEXT, "text" TEXT, "web" TEXT, "areaDesc" TEXT, "codeIMG" TEXT, "image" TEXT, "event" TEXT, "urgency" TEXT, "severity" TEXT, "certainty" TEXT, "DateEffective" TEXT, "DateOnset" TEXT, "DateExpires" TEXT, "instruction" TEXT, PRIMARY KEY("id" AUTOINCREMENT))'
+        cursor.execute(sql)
+
+        sql = 'CREATE TABLE "warnings" ("id" INTEGER, "wid" TEXT, "title_de" TEXT, "title_en" TEXT, "version" INTEGER, "severity" REAL, "type" TEXT, "geo" TEXT, "source" TEXT, "descr" TEXT, "last_update" TEXT, "image" TEXT, PRIMARY KEY("id" AUTOINCREMENT))'
+        cursor.execute(sql)
+
+        sql = 'CREATE TABLE warntype(id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT,type TEXT)'
+        cursor.execute(sql)
+
         connection.close()
-        # Datensatz erzeugen
-        """
-        sql = "INSERT INTO warntype (name, type) VALUES('Katwarn', 'kat')"
-        self.insert_into(sql, "warn.db")
-        sql = "INSERT INTO warntype (name, type) VALUES('Biwapp', 'kat')"
-        self.insert_into(sql, "warn.db")
-        sql = "INSERT INTO warntype (name, type) VALUES('Mowas', 'kat')"
-        self.insert_into(sql, "warn.db")
-        sql = "INSERT INTO warntype (name, type) VALUES('DWD', 'Wetter')"
-        self.insert_into(sql, "warn.db")
-        sql = "INSERT INTO warntype (name, type) VALUES('Hochwasser Portal', 'kat')"
-        self.insert_into(sql, "warn.db")
-        sql = "INSERT INTO warntype (name, type) VALUES('Polizei', 'kat')"
-        self.insert_into(sql, "warn.db")
-        sql = "INSERT INTO warntype (name, type) VALUES('Covid', 'Covid')"
-        self.insert_into(sql, "warn.db")
-        """
-        # Datensatz erzeugen
-        # sql = "INSERT INTO personen VALUES('Schmitz', " \
-        #       "'Peter', 81343, 3750, '12.04.1958')"
-        # cursor.execute(sql)
-        # connection.commit()
-
-        # Datensatz erzeugen
-        # sql = "INSERT INTO personen VALUES('Mertens', " \
-        #      "'Julia', 2297, 3621.5, '30.12.1959')"
-        # cursor.execute(sql)
-        # connection.commit()
 
     @staticmethod
     def execute_db(sql, db):
+        """
+        Führt ein query in der DB aus
+        :param sql:
+        :param db:
+        :return:
+        """
         # Verbindung zur Datenbank erzeugen
         connection = sqlite3.connect(db)
         # Datensatz-Cursor erzeugen
         cursor = connection.cursor()
-        print(db + ": " + sql)
+        now = datetime.now()
+        current_time = now.strftime("%d-%m-%Y %H:%M:%S")
+        # print("[db_insert][" + current_time + "]" + db + ": " + sql)
+
         cursor.execute(sql)
         connection.commit()
         connection.close()
+        return True
 
     @staticmethod
     def insert_multiple(sql, db):
+        """
+        Fügt mehrere Parameter in warntype hinzu
+        :param sql:
+        :param db:
+        :return:
+        """
         connection = sqlite3.connect(db)
         cursor = connection.cursor()
         # print(db + ": " + sql)
@@ -99,6 +89,12 @@ class Database:
 
     @staticmethod
     def delete_query(sql, db):
+        """
+        Löscht ein eintrag aus der DB
+        :param sql:
+        :param db:
+        :return:
+        """
         connection = sqlite3.connect(db)
         cursor = connection.cursor()
         # print(db + ": " + sql)
@@ -108,8 +104,19 @@ class Database:
 
     @staticmethod
     def get_query(table_name, where=None):
-        print("Print Tabelle: ", table_name)
-        conn = sqlite3.connect("warn.db")
+        """
+        Gibt das result einer QUERY aus der DB zurück.
+        Where ist hierbei optional.
+        :param table_name:
+        :param where:
+        :return:
+        """
+        config = configparser.ConfigParser()
+        config.read("config.ini")
+        config_db = config["Datenbank"]
+
+        # print("Print Tabelle: ", table_name)
+        conn = sqlite3.connect(config_db['PATH'])
         c = conn.cursor()
 
         if where is None:
@@ -119,13 +126,22 @@ class Database:
         c.execute(query)
 
         rows = c.fetchall()
-        #print(rows)
+        # print(rows)
         """for row in rows:
             print(row)"""
         conn.close()
         return rows
 
-    def check_if_exist(self, tbl_name, db, where, where_val):
+    @staticmethod
+    def check_if_exist(tbl_name, db, where, where_val):
+        """
+        Gibt das Result einer Abfrage zurück. Diese Funktion ist Variable durch die Tabelle, DB, Where und Value für Where
+        :param tbl_name:
+        :param db:
+        :param where:
+        :param where_val:
+        :return:
+        """
         conn = sqlite3.connect(db)
         c = conn.cursor()
 
@@ -139,21 +155,33 @@ class Database:
         conn.close()
         return result
 
-    def send_all_users_msg(self, text, where=None):
+    def get_users(self, where=None):
+        """
+        Gibt alle user aus
+        :param where:
+        :return:
+        """
         userlist = self.get_query("users", where)
         liste = []
         for e in userlist:
             tmp = [e[2], e[5]]  # Zwischenspeichern von name und chat_id
-            liste.append(tmp)   # In eine neue Liste einfügen, die nur name und chat_id beinhaltet
+            liste.append(tmp)  # In eine neue Liste einfügen, die nur name und chat_id beinhaltet
 
-        print(liste)
+        # print(liste)
         return userlist
 
     @staticmethod
     def count_rows(table, where=None):
+        """
+        Zählt die Anzahl von Einträgen anhand von Tabelle und Where
+        :param table:
+        :param where:
+        :return:
+        """
         arr = Database.get_query(table, where)
-        print("coming %", len(arr))
+        # print("coming %", len(arr))
         return len(arr)
+
 
 """db = Database()
 db.send_all_users_msg("test", "name like 'marco'")"""

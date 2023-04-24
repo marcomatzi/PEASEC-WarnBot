@@ -5,7 +5,7 @@ class SetupEnv:
     print("Umgebung wird initialisiert...")
     db = Database()
     """
-    db.create_db()
+        db.create_db()
     print("Datenbank wurde erstellt!")
     print("Fertig! Init abgeschlossen...")
 
