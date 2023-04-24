@@ -33,28 +33,28 @@ Das Programm wurde in Python 3.9 entwickelt und getestet.
 
 Um den WarnBot in Telegram zu verwenden, muss im Vorfeld ein Bot über den Botfather (https://telegram.me/BotFather) erstellt werden. Der Botfather ist ein Service, der die Erstellung von Bots in Telegram vereinfacht.
 
-Laden Sie das Repository herunter oder klonen Sie es mit Git.
+1) Laden Sie das Repository herunter oder klonen Sie es mit Git.
 ```php
   git clone https://github.com/marcomatzi/PEASEC-WarnBot.git
 ```
-Installieren Sie die erforderlichen Pakete mit pip.
+2) Installieren Sie die erforderlichen Pakete mit pip.
 ```php
   pip install -r requirements.txt
 ```    
-Fügen Sie den BOT-KEY in die config.ini ein.
+3) Fügen Sie den BOT-KEY in die config.ini ein.
 ```php
   ...
   [TelegramAPI]
     KEY = abc:000
     ...
 ``` 
-Programm ausführen mit
+4) Programm ausführen mit
 ```php
   python main.py
 ```   
 \
 INFO:\
-Falls Sie eine neue Datenbank verwenden möchten, ohne Inhalt, können Sie die bestehende *.db löschen und den folgenden Befehl auführen.
+OPTIONAL 3.1) Falls Sie eine neue Datenbank ohne Inhalt verwenden möchten, können Sie die bestehende *.db löschen und den folgenden Befehl auführen.
 ```php
   python init.py
 ```  
