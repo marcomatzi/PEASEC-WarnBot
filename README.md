@@ -37,24 +37,30 @@ Um den WarnBot in Telegram zu verwenden, muss im Vorfeld ein Bot über den Botfa
 ```python
   git clone https://github.com/marcomatzi/PEASEC-WarnBot.git
 ```
-2) Installieren Sie die erforderlichen Pakete mit pip.
+
+2) Navigieren Sie in den Ordner des Codes. Beispiel:
+```python
+  cd .\PEASEC-WarnBot\
+```
+
+3) Installieren Sie die erforderlichen Pakete mit pip.
 ```python
   pip install -r requirements.txt
 ```    
-3) Fügen Sie den BOT-KEY in die config.ini ein.
+4) Fügen Sie den BOT-KEY in die config.ini ein.
 ```python
   ...
   [TelegramAPI]
     KEY = abc:000
     ...
 ``` 
-4) Programm ausführen mit
+5) Programm ausführen mit
 ```python
   python main.py
 ```   
 \
 INFO:\
-OPTIONAL 3.1) Falls Sie eine neue Datenbank ohne Inhalt verwenden möchten, können Sie die bestehende *.db löschen und den folgenden Befehl auführen.
+OPTIONAL 4.1) Falls Sie eine neue Datenbank ohne Inhalt verwenden möchten, können Sie die bestehende *.db löschen und den folgenden Befehl auführen.
 ```python
   python init.py
 ```  
