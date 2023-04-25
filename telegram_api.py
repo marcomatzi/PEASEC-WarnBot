@@ -611,7 +611,7 @@ class TelegramBot:
             # Navigation durch die Verhalten Tipps.
             # Infos kommen aus der JSON der NINA API und können manuell aktualisiert werden
             keyboard = []
-            conn = sqlite3.connect('warn.db')
+            conn = sqlite3.connect(self.config_db["PATH"])
             c = conn.cursor()
 
             c.execute("SELECT DISTINCT(kategorie) from notfalltipps")
@@ -644,7 +644,7 @@ class TelegramBot:
             # Jede andere Benutzereingabe
 
             keyboard = []
-            conn = sqlite3.connect('warn.db')
+            conn = sqlite3.connect(self.config_db["PATH"])
             c = conn.cursor()
 
             c.execute("SELECT DISTINCT(kategorie2) from notfalltipps WHERE kategorie='{}'".format(text))
