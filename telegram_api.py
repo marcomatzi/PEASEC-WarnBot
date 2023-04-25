@@ -594,7 +594,7 @@ class TelegramBot:
         elif text == "/disclaimer":
             # Hier kann ein Disclaimer stehen
             return "&#128679; Folgt."
-        elif text == "Notrufnummern":
+        elif text == "Notrufnummern" or text == "/Notrufnummern":
             # Wichtige Rufnummern.
             return "<b>Wichtige Notrufnummern in DE:</b>\n - Polizei: 110\n- Rettungsdienst und Feuerwehr: 112\n- Ärztlicher Bereitschaftsdienst: 116117\n\n" \
                    "<b>Giftnotrufzentralen</b>\n" \

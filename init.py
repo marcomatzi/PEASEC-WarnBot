@@ -26,4 +26,7 @@ class SetupEnv:
     ]
     db.insert_multiple(sql_list, config_db['PATH'])
 
+    coll = Collector("", config_db['PATH'])
+    coll.collect_notfalltipps()
+
     print("Fertig! Init abgeschlossen...")

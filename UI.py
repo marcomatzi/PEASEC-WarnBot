@@ -1103,11 +1103,11 @@ class App(customtkinter.CTk):
         # Reset der Elemente auf Werkeinstellung
         # Bilder auf Platzhalter und Texte leeren
         self.second_codeiiimg.configure(
-            light_image=Image.open(os.path.join("Test/test_images/platzhalter.png")).resize((256, 256)),
-            dark_image=Image.open(os.path.join("Test/test_images/platzhalter.png")).resize((256, 256)))
+            light_image=Image.open(os.path.join("images/platzhalter.png")).resize((256, 256)),
+            dark_image=Image.open(os.path.join("images/platzhalter.png")).resize((256, 256)))
         self.second_img.configure(
-            light_image=Image.open(os.path.join("Test/test_images/platzhalter.png")).resize((256, 256)),
-            dark_image=Image.open(os.path.join("Test/test_images/platzhalter.png")).resize((256, 256)))
+            light_image=Image.open(os.path.join("images/platzhalter.png")).resize((256, 256)),
+            dark_image=Image.open(os.path.join("images/platzhalter.png")).resize((256, 256)))
 
         self.second_desc.delete("0.0", customtkinter.END)
         self.second_title.delete(0, customtkinter.END)
@@ -1299,7 +1299,7 @@ class App(customtkinter.CTk):
         :return:
         """
         if url == 'None':
-            return Image.open(os.path.join("Test/test_images/platzhalter.png")).resize((256, 256))
+            return Image.open(os.path.join("images/platzhalter.png")).resize((256, 256))
 
         response = urllib.request.urlopen(url)
         img_data = response.read()

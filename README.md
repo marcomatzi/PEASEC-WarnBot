@@ -4,7 +4,7 @@
 # PEASEC-WarnBot
 Gemäß meiner Bachelorarbeit habe ich eine Implementierung des WarnBots in Telegram (IM) vorgenommen, wobei die TelegramAPI verwendet wurde. Das Ziel besteht darin, Warnmeldungen zu verschiedenen Themen, einschließlich Krieg und Katastrophen, Kriminalität, Verkehr, Gesundheit und Wetter, per Direktnachricht an den Nutzer zu senden.
 
-Dieses Tool ist kein vollimplementierter Bot, sondern dient zu Evaluierungszwecken.
+Dieses Tool ist kein voll implementierter Bot, sondern dient zu Evaluierungszwecken.
 
 
 
@@ -34,28 +34,28 @@ Das Programm wurde in Python 3.9 entwickelt und getestet.
 Um den WarnBot in Telegram zu verwenden, muss im Vorfeld ein Bot über den Botfather (https://telegram.me/BotFather) erstellt werden. Der Botfather ist ein Service, der die Erstellung von Bots in Telegram vereinfacht.
 
 1) Laden Sie das Repository herunter oder klonen Sie es mit Git.
-```php
+```python
   git clone https://github.com/marcomatzi/PEASEC-WarnBot.git
 ```
 2) Installieren Sie die erforderlichen Pakete mit pip.
-```php
+```python
   pip install -r requirements.txt
 ```    
 3) Fügen Sie den BOT-KEY in die config.ini ein.
-```php
+```python
   ...
   [TelegramAPI]
     KEY = abc:000
     ...
 ``` 
 4) Programm ausführen mit
-```php
+```python
   python main.py
 ```   
 \
 INFO:\
 OPTIONAL 3.1) Falls Sie eine neue Datenbank ohne Inhalt verwenden möchten, können Sie die bestehende *.db löschen und den folgenden Befehl auführen.
-```php
+```python
   python init.py
 ```  
 Damit wird eine neue Datenbank erstellt, mit dem Namen aus der config.ini (Abschnitt Datenbank: PATH)
@@ -65,7 +65,7 @@ Wichtig: init.py muss vor der main.py ausgeführt werden.
 ## FAQ
 
 #### Kann der Bot Warnmeldungen automatisch versenden?
-Nein.
+Nein. Warnmeldungen müssen über die Evaluierungsform versendet werden.
 
 #### Welche Benutzerdaten sammelt der Bot?
 Der Bot sammelt nur UserID, ChatID und Username. Im Setup kann der User noch Warnmeldungsarten und eine/n Region/Ort hinterlegen.
@@ -83,10 +83,12 @@ Sie können über die init.py eine leere Datenbank erstellen. Dazu einfach in de
 In der confi.ini im Abschnitt [WarnAppsAPI] und dann INTERVALL. Die Angabe bezieht sich auf Sekunden.
 
 #### In der Datenbank sind keine Notfalltipps vorhanden?
-Führe die Funktion "collect_notfalltipps" in collector.py aus. Diese lädt alle Infos aus der Nina API.
+Führe die Funktion "collect_notfalltipps" in collector.py aus. Diese lädt alle Infos aus der Nina API. Beim Ausführen der init.py werden alle aktuellen Notfalltipps ebenfalls importiert.
+
+Wichtig: Beim Import wird nicht geprüft ob bereits Einträge existieren. Beim erneuten Ausführen wird kein Update durchgeführt, sondern der import erneut durchgeführt. Bei Duplikaten kann es zu Fehlern im Messenger führen.
 
 #### Gibt es eine Prefilled Datenbank?
-Ja! Nutze dazu die warn_prefilled.db. Zur Nutzung den Namen in warn.db oder in der condig.ini den Datenbanknamen ändern.
+Ja! Nutze dazu die warn_prefilled.db. Zur Nutzung den Namen in warn.db ändern oder in der config.ini den Datenbanknamen abändern.
 
 
 
